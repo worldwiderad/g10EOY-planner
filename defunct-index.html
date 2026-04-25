@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>G10 Schedule</title>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --panel: #161618;
+    --panel-2: #1d1d20;
+    --border: #2a2a2e;
+    --text: #e7e5e0;
+    --muted: #8a8a90;
+    --accent: #8B1E1E;
+    --accent-soft: #5a1414;
+    --amber: #b88a2c;
+    --red: #c8341d;
+    --good: #4a8c5a;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+  body { font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif; padding-bottom: 4rem; }
+  .mono { font-family: "SF Mono", Menlo, ui-monospace, monospace; }
+  a { color: var(--text); }
+  button { font: inherit; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  header {
+    position: sticky; top: 0; z-index: 5;
+    background: linear-gradient(to bottom, var(--bg) 80%, transparent);
+    padding: 12px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .deadlines { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }
+  .deadline {
+    background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--muted);
+    border-radius: 6px; padding: 6px 10px; min-width: 0;
+    font-size: 13px;
+  }
+  .deadline.soon { border-left-color: var(--red); }
+  .deadline.near { border-left-color: var(--amber); }
+  .deadline .when { font-weight: 600; }
+  .deadline .when.soon { color: var(--red); }
+  .deadline .when.near { color: var(--amber); }
+  .deadline .what { color: var(--muted); display: block; font-size: 12px; margin-top: 2px; }
+  .progress {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px; font-size: 12px; color: var(--muted);
+    white-space: nowrap; align-self: flex-start;
+  }
+  .progress strong { color: var(--text); font-size: 14px; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .progress-bar > span { display: block; height: 100%; background: var(--accent); transition: width 0.3s; }
+
+  main { max-width: 880px; margin: 0 auto; padding: 16px; }
+
+  nav.daynav { display: flex; align-items: center; gap: 8px; margin: 8px 0 18px; }
+  nav.daynav .spacer { flex: 1; }
+  .day-label { font-size: 20px; font-weight: 600; }
+  .day-note { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+
+  .day-table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .day-table tr { border-bottom: 1px solid var(--border); }
+  .day-table tr:last-child { border-bottom: none; }
+  .day-table tr.trackable { background: var(--panel-2); }
+  .day-table tr.trackable.done { opacity: 0.5; }
+  .day-table tr.trackable.done .task { text-decoration: line-through; }
+  .day-table td { padding: 8px 10px; vertical-align: top; }
+  .day-table td.time { width: 28%; color: var(--muted); white-space: nowrap; font-family: "SF Mono", Menlo, ui-monospace, monospace; font-size: 13px; }
+  .day-table td.task { width: 65%; }
+  .day-table td.check { width: 7%; text-align: center; }
+  .day-table .deadline-row { background: rgba(139, 30, 30, 0.15); }
+  .day-table .deadline-row td.task { font-weight: 600; }
+  input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+  section.weeks { margin-top: 40px; }
+  section.weeks h2 { font-size: 16px; color: var(--muted); font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .weeks-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .weeks-table th, .weeks-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+  .weeks-table th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .weeks-table tr.today td { background: rgba(139, 30, 30, 0.18); }
+  .weeks-table tr.deadline td.event { font-weight: 700; color: var(--text); }
+  .weeks-table td.day { white-space: nowrap; width: 90px; }
+  .weeks-table td.event { width: 35%; color: var(--muted); }
+  .weeks-table tr.deadline td.event { color: var(--text); }
+  .weeks-table td a { color: inherit; text-decoration: none; cursor: pointer; }
+  .weeks-table td a:hover { color: var(--accent); }
+  .weeks-table tr.weekstart td { border-top: 2px solid var(--border); }
+
+  .footer-note { color: var(--muted); font-size: 12px; margin-top: 24px; text-align: center; }
+
+  @media (max-width: 600px) {
+    header { padding: 10px 12px 12px; }
+    main { padding: 12px; }
+    .deadline { font-size: 12px; padding: 5px 8px; }
+    .day-table td.time { width: 32%; font-size: 12px; }
+    .day-label { font-size: 17px; }
+    nav.daynav button { padding: 6px 8px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="deadlines" id="deadlines"></div>
+    <div class="progress" id="progress">
+      <div>Week <strong id="pct">0%</strong></div>
+      <div class="progress-bar"><span id="pbar" style="width:0"></span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <nav class="daynav">
+    <button id="prev">&lsaquo; Prev</button>
+    <button id="today">Today</button>
+    <button id="next">Next &rsaquo;</button>
+    <div class="spacer"></div>
+    <button id="jumpAll" title="Scroll to all-weeks table">All weeks</button>
+  </nav>
+
+  <div id="day-note" class="day-note"></div>
+  <div class="day-label" id="day-label"></div>
+  <div class="day-note" id="day-sub"></div>
+
+  <table class="day-table"><tbody id="day-body"></tbody></table>
+
+  <section class="weeks" id="all-weeks">
+    <h2>All weeks (Apr 25 &mdash; Jun 5)</h2>
+    <table class="weeks-table">
+      <thead><tr><th>Day</th><th>Event</th><th>Work focus</th></tr></thead>
+      <tbody id="weeks-body"></tbody>
+    </table>
+  </section>
+
+  <div class="footer-note mono">Source: G10_End_of_Year_Plan_v2.md &middot; checks saved locally per device</div>
+</main>
+
+<script>
+// Source: G10_End_of_Year_Plan_v2.md. Update both when plan changes.
+const schedule = {
+  deadlines: [
+    { date: "2026-04-27", label: "JLEC S&T ethics request to Ms. Milligan" },
+    { date: "2026-04-27", label: "WSC registration finalized" },
+    { date: "2026-05-06", label: "Math formative + Design Crit C summative" },
+    { date: "2026-05-09", label: "WSC Singapore Regional Day 1" },
+    { date: "2026-05-10", label: "WSC Day 2 / KILL DATE for JLEC S&T" },
+    { date: "2026-05-12", label: "Math Extended summative (Crit C+D)" },
+    { date: "2026-05-14", label: "AP CSP exam" },
+    { date: "2026-05-20", label: "Design Crit D + JLEC Law draft complete" },
+    { date: "2026-05-21", label: "INS exam" },
+    { date: "2026-05-22", label: "SCI exam + LLE exam" },
+    { date: "2026-05-25", label: "Math Extended exam (Crit A)" },
+    { date: "2026-05-26", label: "Chinese LAQ exam" },
+    { date: "2026-05-31", label: "JLEC Law submission" }
+  ],
+  days: [
+    { date: "2026-04-25", label: "Sat Apr 25", note: "Setup + Design Crit C scoping + JLEC source reading kickoff.", focus: "Design Crit C scoping; JLEC source reading (Strawson, Greene & Cohen)", blocks: [
+      { time: "Now – 13:00", task: "Whatever you're doing, finish lunch by 13:00" },
+      { time: "13:00 – 14:00", task: "Design Crit C scoping: list exactly what's done, what's missing, estimate hours remaining. Write the number down.", trackable: true },
+      { time: "14:00 – 14:15", task: "Break" },
+      { time: "14:15 – 16:15", task: "JLEC source reading: Strawson, \"Freedom and Resentment\" (full read, annotate against v8 plan)", trackable: true },
+      { time: "16:15 – 16:45", task: "Walk, break, snack" },
+      { time: "16:45 – 18:30", task: "JLEC source reading: Greene & Cohen 2004 (start)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC source reading: Greene & Cohen finish + write 1-page summary against v8 plan", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: start Pereboom 2001 introduction" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-26", label: "Sun Apr 26", note: "Heavy day. Design Crit C catch-up + source reading.", focus: "Design Crit C heavy push; Math formative warmup; AP CSP FRQ; JLEC reading", blocks: [
+      { time: "7:30 – 8:30", task: "Wake, breakfast, light planning (review tomorrow's email drafts)" },
+      { time: "8:30 – 11:30", task: "Design Crit C heavy push (3 hrs)", trackable: true },
+      { time: "11:30 – 12:00", task: "Break, walk" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 14:30", task: "Math formative warmup (1.5 hrs) — sets up May 6 deliverable + summative prep", trackable: true },
+      { time: "14:30 – 15:30", task: "AP CSP FRQ practice session 1", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "JLEC source reading: Pereboom main chapters (2.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 20:30", task: "Design Crit C continued (1.5 hrs)", trackable: true },
+      { time: "20:30 – 21:00", task: "Draft Mon emails: Ms. Milligan ethics request, WSC submit confirmation" },
+      { time: "21:00 – 22:00", task: "Reading: Pereboom continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-27", label: "Mon Apr 27", note: "Critical Monday: ethics email + WSC registration submission.", focus: "Send ethics email; submit WSC; Design Crit C; JLEC reading (Pereboom)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Send ethics email to Ms. Milligan before school.", trackable: true, deadline: true },
+      { time: "8:30 – 13:05", task: "School" },
+      { time: "13:35 – 14:20", task: "SMART = WSC (final registration push, parent payments, judges confirm)", trackable: true },
+      { time: "14:20 – 15:30", task: "Block 4" },
+      { time: "15:30 – 16:30", task: "Transit, decompress, submit WSC registration online", trackable: true, deadline: true },
+      { time: "16:30 – 18:30", task: "Design Crit C (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: Pereboom continued", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: Pereboom" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-28", label: "Tue Apr 28", note: "WSC after-school day (recommended). Compressed work day.", focus: "WSC after-school; Design Crit C compressed; JLEC reading (Morse)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 17:30", task: "WSC after-school session (host first one)", trackable: true },
+      { time: "17:30 – 18:30", task: "Work Block 1 (compressed): Design Crit C", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: Morse", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: Morse continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-29", label: "Wed Apr 29", note: "", focus: "Design Crit C; JLEC reading (Duff)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Design Crit C (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: Duff", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: Duff continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-30", label: "Thu Apr 30", note: "", focus: "Design Crit C — aim 80%+ done; JLEC reading (McGeer)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Design Crit C (2 hrs) — aim for 80%+ done", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: McGeer", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: McGeer continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-01", label: "Fri May 1", note: "", focus: "AP CSP FRQ full mock; JLEC Locke + v8 plan re-read", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "AP CSP FRQ practice session 2 (2 hrs, full mock)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC: Locke (light pass) + read v8 plan with all sources fresh", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: any source gaps" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-02", label: "Sat May 2", note: "Theme: May 6 deliverables prep. JLEC outline.", focus: "JLEC Law detailed outline; Math formative practice; Design Crit C finalize", blocks: [
+      { time: "7:30 – 11:00", task: "Wake, free morning. JLEC Law detailed outline against v8 (3 hrs)", trackable: true },
+      { time: "11:00 – 12:00", task: "Piano" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:30", task: "Math formative practice problems (2.5 hrs)", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "Design Crit C finalize section (2.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC outline continued + map sources to sections (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: re-read Strawson selections for outline" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-03", label: "Sun May 3", note: "", focus: "Design Crit C polish; Math formative + summative prep starts; JLEC Section 1 draft; AP CSP FRQ", blocks: [
+      { time: "7:30 – 12:00", task: "Wake, free morning. Design Crit C polish (4.5 hrs) — aim ready-to-submit by Wed", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:30", task: "Math formative practice + summative prep starts (2.5 hrs)", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "JLEC Section 1 draft (2.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "AP CSP FRQ practice session 3 (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: any source gaps" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-04", label: "Mon May 4", note: "", focus: "Design Crit C final polish; Math formative review", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Design Crit C final polish (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "Math formative review for Wednesday", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-05", label: "Tue May 5", note: "WSC after-school.", focus: "WSC session; Design Crit C final review; Math formative final practice + AP CSP FRQ", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 17:30", task: "WSC session", trackable: true },
+      { time: "17:30 – 18:30", task: "Design Crit C final review + format pass", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "Math formative final practice + AP CSP FRQ", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-06", label: "Wed May 6", note: "TWO DELIVERABLES DAY: Math formative + Design Crit C summative.", focus: "MATH FORMATIVE; DESIGN CRIT C SUBMISSION; JLEC Section 2 draft", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Light Math review only. Confirm Design Crit C is uploaded/ready." },
+      { time: "8:45", task: "MATH FORMATIVE (in-class, period 1)", trackable: true, deadline: true },
+      { time: "9:00 – 16:00", task: "Rest of school day" },
+      { time: "16:00", task: "DESIGN CRIT C SUBMISSION (deadline 4pm)", trackable: true, deadline: true },
+      { time: "16:00 – 18:30", task: "JLEC Section 2 draft (2 hrs) — momentum from clear deliverables", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC Section 2 continued", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-07", label: "Thu May 7", note: "", focus: "JLEC Section 1 revision; Math summative prep (weak areas)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC Section 1 revision (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "Math summative prep (key topics list, identify weak areas)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-08", label: "Fri May 8", note: "Last working day before WSC weekend. Ethics check by EOD.", focus: "Math summative deep prep; JLEC Section 2 finish; pack WSC kit", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Math summative prep deep (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC: Section 2 finish, prep mind for WSC weekend", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Pack WSC bag, charge devices, set out kit for tomorrow." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-09", label: "Sat May 9", note: "WSC DAY 1 — Singapore Regional. No academic work.", focus: "WSC Day 1 — Nexus", blocks: [
+      { time: "All day", task: "WSC Singapore Regional Round at Nexus — support delegation. No academic work.", trackable: true, deadline: true },
+      { time: "Evening", task: "Hydrate, eat well, rest. Tomorrow is also WSC." },
+      { time: "22:00", task: "Bed (early if possible)" }
+    ]},
+    { date: "2026-05-10", label: "Sun May 10", note: "WSC DAY 2 + light Math eve. JLEC S&T kill date.", focus: "WSC Day 2; light Math summative review; JLEC S&T decision", blocks: [
+      { time: "All day", task: "WSC Day 2. Final round, ceremonies.", trackable: true, deadline: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Light Math summative review (1.5–2 hrs) — no new content. JLEC S&T decision finalized tonight.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Sleep early." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-11", label: "Mon May 11", note: "Math summative push day.", focus: "Math summative prep (sim test conditions); AP CSP FRQ run; Math weak-spot final", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Light Math recall." },
+      { time: "8:30 – 13:05", task: "School" },
+      { time: "13:35 – 14:20", task: "SMART = WSC (debrief regional round, plan next steps)" },
+      { time: "14:20 – 15:30", task: "Block 4" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Math summative prep (2 hrs) — simulate test conditions", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 20:30", task: "AP CSP FRQ run (45 min, format only)", trackable: true },
+      { time: "20:30 – 21:00", task: "Math final review (light, weak spots only)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Sleep early before summative." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-12", label: "Tue May 12", note: "MATH EXTENDED SUMMATIVE (Crit C+D, ~2x exam weight).", focus: "MATH SUMMATIVE; JLEC Section 3 outline; AP CSP FRQ final practice", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Light Math recall warmup, no new content." },
+      { time: "8:30 – 11:30", task: "School blocks 1–2" },
+      { time: "11:45 – ~12:45", task: "MATH EXTENDED SUMMATIVE (Crit C+D) in-class", trackable: true, deadline: true },
+      { time: "12:45 – 15:30", task: "Rest of school day" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Easy work: JLEC Section 3 outline, low-cognitive-load", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "AP CSP FRQ final practice (1+ hr)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-13", label: "Wed May 13", note: "AP CSP final prep + INS first pass.", focus: "AP CSP final review; INS first pass; JLEC Section 3 draft", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 17:15", task: "AP CSP final review (45 min, light, format/strategy only)", trackable: true },
+      { time: "17:15 – 18:30", task: "INS first pass (1.25 hrs) — chunked notes per unit, gap inventory", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC Section 3 draft (1.25 hrs) — lighter touch", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Pack pen/calculator/clear pencil case for tomorrow's exam. Set alarm. Early sleep." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-14", label: "Thu May 14", note: "AP CSP EXAM DAY.", focus: "AP CSP EXAM (3h15m); collapse + rest", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast (substantial). Calm. No cramming." },
+      { time: "8:30 – 12:00", task: "School (morning blocks). Hydrate, snack at break." },
+      { time: "12:15 – 15:30", task: "AP CSP EXAM (3 hr 15 min)", trackable: true, deadline: true },
+      { time: "15:30 – 18:30", task: "COLLAPSE. Walk, eat, rest. NO study. NO JLEC. NO screens if possible." },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light, by feel)" },
+      { time: "19:45 – 21:00", task: "Optional: 30 min JLEC review (NOT drafting) if energy. Otherwise rest.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading (fiction, not work)" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-15", label: "Fri May 15", note: "Recovery + JLEC drafting heavy.", focus: "JLEC Section 3 finish; LLE first pass", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC Section 3 finish (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "LLE first pass (1.25 hrs) — chunked notes on key texts, themes", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-16", label: "Sat May 16", note: "Theme: JLEC draft completion + first two exams ahead.", focus: "JLEC Section 4; INS pass 2; SCI first pass; JLEC Section 4 finish", blocks: [
+      { time: "7:30 – 12:00", task: "Free morning. JLEC Section 4 draft (4.5 hrs)", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:00", task: "INS pass 2: Units 3+4 deep + practice essay outline (2 hrs)", trackable: true },
+      { time: "15:00 – 15:30", task: "Break" },
+      { time: "15:30 – 18:30", task: "SCI first pass (3 hrs) — chunked notes per unit, identify long-answer rubric language", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC Section 4 finish + Section 5 outline (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-17", label: "Sun May 17", note: "", focus: "JLEC Section 5; SCI pass 2; Chinese first pass; JLEC opener/closer", blocks: [
+      { time: "7:30 – 12:00", task: "Free morning. JLEC Section 5 draft (4.5 hrs)", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:30", task: "SCI pass 2 (2.5 hrs) — structured-response practice, rubric phrasing", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "Chinese first pass (2.5 hrs) — vocab, build 3–4 paragraph templates", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC Section 5 finish + opener/closer (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-18", label: "Mon May 18", note: "", focus: "JLEC opener/closer revision + first stitch-together; LLE pass 2", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 13:05", task: "School" },
+      { time: "13:35 – 14:20", task: "SMART = WSC (or use for LLE quote review if WSC light)" },
+      { time: "14:20 – 15:30", task: "Block 4" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC opener/closer revision + first stitch-together pass (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "LLE pass 2: criteria practice, key text analysis (1.25 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-19", label: "Tue May 19", note: "WSC after-school (last regular before exam block).", focus: "WSC session; JLEC revision pass 1 (structural); INS pass 3", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 17:30", task: "WSC session (last regular one before exam block)", trackable: true },
+      { time: "17:30 – 18:30", task: "JLEC revision pass 1 (structural)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "INS pass 3: Units 1+2 + cross-unit synthesis (1.25 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Quick SCI recall warmup." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-20", label: "Wed May 20", note: "JLEC DRAFT DEADLINE + Design Crit D submission.", focus: "DESIGN CRIT D SUBMISSION; JLEC final smooth-out (v9 draft); INS final review", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:00", task: "DESIGN CRIT D SUBMISSION (deadline 4pm)", trackable: true, deadline: true },
+      { time: "16:00 – 18:30", task: "JLEC final smooth-out (2.5 hrs) — all five sections + intro + conclusion. Set aside as v9 draft.", trackable: true, deadline: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "INS final review (light, ~45 min) + light SCI recall", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Lay out exam kit for tomorrow. Early sleep." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-21", label: "Thu May 21", note: "INS EXAM (Crit A, C, D).", focus: "INS EXAM; SCI pass 3 deep; LLE final prep", blocks: [
+      { time: "7:00 – 8:00", task: "Wake, breakfast. INS recall warmup: Ten Stages, four experiments, civilization collapse summaries (15 min)." },
+      { time: "8:35", task: "In seat" },
+      { time: "8:45 – 10:15", task: "INS EXAM (Crit A, C, D)", trackable: true, deadline: true },
+      { time: "10:15 – 13:00", task: "Rest of morning, lunch" },
+      { time: "13:00 – 15:30", task: "School (rest of day)" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "SCI pass 3 deep (2 hrs) — long-answer practice", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light)" },
+      { time: "19:45 – 21:00", task: "LLE final prep: key quotes drilled into long-term memory, criteria language ready", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Sleep early. Tomorrow is double-exam day." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-22", label: "Fri May 22", note: "DOUBLE EXAM (SCI + LLE).", focus: "SCI EXAM; LLE EXAM; rest; light Math review (kick off Math weekend)", blocks: [
+      { time: "6:30 – 7:30", task: "Wake early. Substantial breakfast. Hydrate." },
+      { time: "7:30 – 8:30", task: "Light SCI recall (concepts, key terms). Then quick LLE recall (key quotes, theme-statements)." },
+      { time: "8:35", task: "In seat" },
+      { time: "8:45 – 10:15", task: "SCI EXAM (Crit A, C, D)", trackable: true, deadline: true },
+      { time: "10:15 – 11:00", task: "Break: snack, water, switch mental gears to LLE. Read prepared LLE statements out loud." },
+      { time: "11:00 – 12:30", task: "LLE EXAM (Crit A, C, D)", trackable: true, deadline: true },
+      { time: "12:30 – 15:30", task: "School (rest of day) — low-energy day, attend, don't push" },
+      { time: "15:30 – 18:30", task: "REST. Walk, food, decompress. Two exams in one morning is brutal." },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light or skip)" },
+      { time: "19:45 – 21:00", task: "Math review (light, 1.25 hrs) — kick off Math weekend", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-23", label: "Sat May 23", note: "Math + Chinese, Chinese-weighted.", focus: "Math practice problems; Chinese deep prep; Math weak spots; Chinese timed writing", blocks: [
+      { time: "7:30 – 11:00", task: "Free morning. Math practice problems (3 hrs)", trackable: true },
+      { time: "11:00 – 12:00", task: "Piano" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 17:00", task: "Chinese deep prep (4 hrs) — vocab drills, refine paragraph templates, 100+ char responses", trackable: true },
+      { time: "17:00 – 18:30", task: "Math weak spots + practice (1.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Chinese practice (2 hrs) — timed writing", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-24", label: "Sun May 24", note: "Chinese-heavy day.", focus: "Chinese heavy timed practice; Math final practice (past papers); Chinese final templates", blocks: [
+      { time: "7:30 – 12:00", task: "Free morning. Chinese heavy (4.5 hrs) — timed practice, sentence patterns drilled", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 16:00", task: "Math final practice (3 hrs) — past papers if available", trackable: true },
+      { time: "16:00 – 16:30", task: "Break" },
+      { time: "16:30 – 18:30", task: "Chinese final templates (2 hrs) — 4–5 plug-and-play structures ready", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Math light review + Chinese vocab recall mixed (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Pack exam kit. Set alarm." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-25", label: "Mon May 25", note: "MATH EXTENDED EXAM (Crit A).", focus: "MATH EXAM; Chinese final pass; Chinese final templates rehearsal", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 13:05", task: "School blocks 1–3" },
+      { time: "13:05 – 13:35", task: "Lunch (light, you have an exam after)" },
+      { time: "13:35 – 13:45", task: "Math recall: formulas, methods. No new content." },
+      { time: "13:45 – 15:15", task: "MATH EXTENDED EXAM (Crit A)", trackable: true, deadline: true },
+      { time: "15:15 – 16:30", task: "Decompress" },
+      { time: "16:30 – 18:30", task: "Chinese final pass (2 hrs) — vocab recall, template review", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light)" },
+      { time: "19:45 – 20:45", task: "Chinese final templates rehearsal (1 hr)", trackable: true },
+      { time: "20:45 – 21:00", task: "Pack exam kit for tomorrow. Set alarm." },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed early" }
+    ]},
+    { date: "2026-05-26", label: "Tue May 26", note: "CHINESE LAQ EXAM — last G10 exam.", focus: "CHINESE LAQ EXAM; rest; JLEC cold read", blocks: [
+      { time: "6:30 – 7:30", task: "Wake early. Breakfast. Chinese vocab recall (~45 min)." },
+      { time: "8:35", task: "In seat" },
+      { time: "8:45 – 10:15", task: "CHINESE LAQ EXAM", trackable: true, deadline: true },
+      { time: "10:15 – 15:30", task: "Rest of school day. G10 EXAMS COMPLETE." },
+      { time: "15:30 – 18:30", task: "REST. Eat. Walk. Sleep if needed." },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC cold read — open the v9 draft, read start to finish, no editing. Big-picture notes only.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-27", label: "Wed May 27", note: "", focus: "JLEC structural revision pass (2x sessions)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School (post-exam, lighter feel)" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC structural revision pass (2 hrs) — addressing big-picture notes from cold read", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC structural revision continued", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-28", label: "Thu May 28", note: "", focus: "JLEC sentence-level pass; JLEC AI feedback pipeline run 1 (R1–R5)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC sentence-level pass (2 hrs) — prose tightening, transitions", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC AI feedback pipeline run 1 (1.25 hrs) — R1–R5 sequential reviewers", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-29", label: "Fri May 29", note: "", focus: "JLEC AI feedback integration (R1–R5 fixes); pipeline run 2 (R6+, citations)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC AI feedback integration (2 hrs) — apply R1–R5 fixes", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC AI feedback pipeline run 2 (R6+ if useful, citations check)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-30", label: "Sat May 30", note: "Theme: Submit. Recover.", focus: "JLEC final polish (line, citations, format); JLEC second AI pass; JLEC final read-aloud + submit-ready", blocks: [
+      { time: "7:30 – 11:00", task: "Free morning. JLEC final polish (3.5 hrs) — line edits, citations, formatting", trackable: true },
+      { time: "11:00 – 12:00", task: "Piano" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:00", task: "JLEC second AI feedback pass (2 hrs)", trackable: true },
+      { time: "15:00 – 18:30", task: "JLEC final read-aloud + final fixes (3.5 hrs). Submit-ready.", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC S&T decision finalized if alive: submit or formally defer. Otherwise rest.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-31", label: "Sun May 31", note: "JLEC LAW SUBMISSION DAY.", focus: "SUBMIT JLEC LAW; celebrate; light VPS Veritas prep", blocks: [
+      { time: "7:30 – 10:00", task: "Free morning. JLEC final read before submission (no major edits, just last-look)." },
+      { time: "10:00 – 11:00", task: "SUBMIT JLEC LAW. Confirm receipt. Screenshot confirmation. Save to outputs.", trackable: true, deadline: true },
+      { time: "11:00 – 13:00", task: "CELEBRATE. Walk, food, see Felix, anything off-screen." },
+      { time: "13:00 – 18:30", task: "Free time. VPS Veritas prep (review docs, set up workspace) if energy. Otherwise rest.", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Free / family time" },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-06-01", label: "Mon Jun 1 – Fri Jun 5", note: "VPS onboarding + recovery. Loose schedule.", focus: "After-school work shifts to VPS Veritas (Singapore phase). IEEE production sim resumable. Symphony optional.", blocks: [
+      { time: "All week", task: "Loose schedule. After-school work shifts to VPS Veritas (in-person Singapore phase, ~May 28+ or per Andrew's confirmation)." },
+      { time: "Evenings", task: "IEEE production simulation can resume if energy. Symphony work optional.", trackable: true },
+      { time: "Recovery", task: "Catch up on sleep, walks, food. G10 done.", trackable: true }
+    ]}
+  ]
+};
+
+// ---- helpers ----
+const $ = (s) => document.querySelector(s);
+const pad = (n) => String(n).padStart(2, "0");
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+};
+const isoToDate = (iso) => {
+  const [y,m,d] = iso.split("-").map(Number);
+  return new Date(y, m-1, d);
+};
+const daysBetween = (aIso, bIso) => Math.round((isoToDate(bIso) - isoToDate(aIso)) / 86400000);
+
+const PLAN_START = "2026-04-25";
+const PLAN_END = "2026-06-05";
+
+let currentISO = todayISO();
+let currentNote = "";
+
+function clampToPlan(iso) {
+  if (iso < PLAN_START) { return { iso: PLAN_START, note: `Today (${iso}) is before the plan starts. Showing first day.` }; }
+  if (iso > PLAN_END) { return { iso: PLAN_END, note: `Today (${iso}) is after the plan ends. Showing last day.` }; }
+  // find the closest day in schedule.days
+  const exact = schedule.days.find(d => d.date === iso);
+  if (exact) return { iso, note: "" };
+  // for Jun 1-5 fallback
+  if (iso >= "2026-06-01" && iso <= "2026-06-05") {
+    return { iso: "2026-06-01", note: `Showing Jun 1–5 loose week (today: ${iso}).` };
+  }
+  // pick nearest
+  let best = schedule.days[0];
+  let bestDist = Infinity;
+  for (const d of schedule.days) {
+    const dist = Math.abs(daysBetween(d.date, iso));
+    if (dist < bestDist) { bestDist = dist; best = d; }
+  }
+  return { iso: best.date, note: `Showing closest scheduled day (today: ${iso}).` };
+}
+
+function dayIndex(iso) {
+  return schedule.days.findIndex(d => d.date === iso);
+}
+
+function storageKey(date, idx) { return `g10:${date}:${idx}`; }
+
+function isCheckedFor(date, idx) {
+  return localStorage.getItem(storageKey(date, idx)) === "1";
+}
+function setChecked(date, idx, val) {
+  if (val) localStorage.setItem(storageKey(date, idx), "1");
+  else localStorage.removeItem(storageKey(date, idx));
+}
+
+// ---- deadlines ----
+function renderDeadlines() {
+  const today = todayISO();
+  const upcoming = schedule.deadlines
+    .filter(d => d.date >= today)
+    .slice(0, 3);
+  const el = $("#deadlines");
+  el.innerHTML = "";
+  if (upcoming.length === 0) {
+    el.innerHTML = `<div class="deadline"><span class="when">All deadlines passed</span><span class="what">G10 wrapped</span></div>`;
+    return;
+  }
+  for (const d of upcoming) {
+    const dist = daysBetween(today, d.date);
+    let cls = "", whenCls = "";
+    if (dist < 3) { cls = "soon"; whenCls = "soon"; }
+    else if (dist < 7) { cls = "near"; whenCls = "near"; }
+    const distStr = dist === 0 ? "TODAY" : dist === 1 ? "tomorrow" : `${dist}d`;
+    const div = document.createElement("div");
+    div.className = `deadline ${cls}`;
+    div.innerHTML = `<span class="when ${whenCls}">${distStr}</span> &middot; <span class="mono">${d.date.slice(5)}</span><span class="what">${d.label}</span>`;
+    el.appendChild(div);
+  }
+}
+
+// ---- progress ----
+function renderProgress() {
+  // current week = Mon..Sun containing today
+  const t = isoToDate(todayISO());
+  const dow = t.getDay(); // 0=Sun
+  const offsetToMon = (dow === 0 ? -6 : 1 - dow);
+  const monday = new Date(t); monday.setDate(t.getDate() + offsetToMon);
+  const weekIsos = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday); d.setDate(monday.getDate() + i);
+    weekIsos.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
+  }
+  let total = 0, done = 0;
+  for (const day of schedule.days) {
+    if (!weekIsos.includes(day.date)) continue;
+    day.blocks.forEach((b, i) => {
+      if (b.trackable) {
+        total++;
+        if (isCheckedFor(day.date, i)) done++;
+      }
+    });
+  }
+  const pct = total === 0 ? 0 : Math.round(100 * done / total);
+  $("#pct").textContent = pct + "%";
+  $("#pbar").style.width = pct + "%";
+}
+
+// ---- day view ----
+function renderDay() {
+  const idx = dayIndex(currentISO);
+  if (idx === -1) return;
+  const day = schedule.days[idx];
+  $("#day-label").textContent = day.label + (day.date === todayISO() ? "  ·  today" : "");
+  $("#day-sub").textContent = day.note || "";
+  $("#day-note").textContent = currentNote;
+  $("#day-note").style.display = currentNote ? "block" : "none";
+
+  const tbody = $("#day-body");
+  tbody.innerHTML = "";
+  day.blocks.forEach((b, i) => {
+    const tr = document.createElement("tr");
+    if (b.trackable) tr.classList.add("trackable");
+    if (b.deadline) tr.classList.add("deadline-row");
+    const checked = b.trackable && isCheckedFor(day.date, i);
+    if (checked) tr.classList.add("done");
+    tr.innerHTML = `
+      <td class="time mono">${b.time}</td>
+      <td class="task">${b.task}</td>
+      <td class="check">${b.trackable ? `<input type="checkbox" ${checked ? "checked" : ""} aria-label="done">` : ""}</td>
+    `;
+    if (b.trackable) {
+      tr.querySelector("input").addEventListener("change", (e) => {
+        setChecked(day.date, i, e.target.checked);
+        if (e.target.checked) tr.classList.add("done"); else tr.classList.remove("done");
+        renderProgress();
+      });
+    }
+    tbody.appendChild(tr);
+  });
+
+  $("#prev").disabled = idx === 0;
+  $("#next").disabled = idx === schedule.days.length - 1;
+}
+
+// ---- weeks table ----
+function dayOfWeek(iso) {
+  const d = isoToDate(iso);
+  return d.getDay();
+}
+function renderWeeks() {
+  const tbody = $("#weeks-body");
+  tbody.innerHTML = "";
+  const today = todayISO();
+  const deadlineByDate = {};
+  for (const d of schedule.deadlines) {
+    if (!deadlineByDate[d.date]) deadlineByDate[d.date] = [];
+    deadlineByDate[d.date].push(d.label);
+  }
+  schedule.days.forEach((day, i) => {
+    const tr = document.createElement("tr");
+    const isToday = day.date === today || (day.date === "2026-06-01" && today >= "2026-06-01" && today <= "2026-06-05");
+    if (isToday) tr.classList.add("today");
+    const dl = deadlineByDate[day.date];
+    if (dl) tr.classList.add("deadline");
+    if (dayOfWeek(day.date) === 6 && i !== 0) tr.classList.add("weekstart"); // Saturday begins each week in this plan
+    const eventText = dl ? dl.join(" / ") : "";
+    tr.innerHTML = `
+      <td class="day mono"><a data-iso="${day.date}">${day.label}</a></td>
+      <td class="event">${eventText}</td>
+      <td class="focus">${day.focus || ""}</td>
+    `;
+    tr.querySelector("a").addEventListener("click", () => {
+      currentISO = day.date;
+      currentNote = "";
+      renderDay();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+// ---- nav ----
+function go(delta) {
+  const idx = dayIndex(currentISO);
+  const next = idx + delta;
+  if (next < 0 || next >= schedule.days.length) return;
+  currentISO = schedule.days[next].date;
+  currentNote = "";
+  renderDay();
+}
+function jumpToday() {
+  const t = todayISO();
+  const c = clampToPlan(t);
+  currentISO = c.iso;
+  currentNote = c.note;
+  renderDay();
+}
+
+// ---- init ----
+function init() {
+  const c = clampToPlan(todayISO());
+  currentISO = c.iso;
+  currentNote = c.note;
+  renderDeadlines();
+  renderProgress();
+  renderDay();
+  renderWeeks();
+
+  $("#prev").addEventListener("click", () => go(-1));
+  $("#next").addEventListener("click", () => go(1));
+  $("#today").addEventListener("click", jumpToday);
+  $("#jumpAll").addEventListener("click", () => {
+    document.getElementById("all-weeks").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.matches("input, textarea")) return;
+    if (e.key === "ArrowLeft") { go(-1); }
+    else if (e.key === "ArrowRight") { go(1); }
+    else if (e.key.toLowerCase() === "t") { jumpToday(); }
+  });
+}
+init();
+</script>
+</body>
+</html>

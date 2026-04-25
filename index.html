@@ -1,0 +1,2055 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>G10 Schedule · v2</title>
+<style>
+  :root {
+    --bg: #0c0c0e;
+    --panel: #161618;
+    --panel-2: #1c1c1f;
+    --panel-3: #232326;
+    --border: #2a2a2e;
+    --border-2: #34343a;
+    --text: #ebe9e3;
+    --text-2: #b9b8b3;
+    --muted: #7c7c82;
+    --accent: #8B1E1E;
+    --accent-2: #b22929;
+    --accent-soft: rgba(139, 30, 30, 0.18);
+    --amber: #b88a2c;
+    --red: #d23a23;
+    --good: #4f9c61;
+    --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.4);
+    --radius: 8px;
+  }
+  /* subject palette (used as CSS vars referenced from JS) */
+  :root {
+    --s-jlec: #b22929;
+    --s-critc: #c97a2c;
+    --s-critd: #d49a55;
+    --s-math: #5b8db8;
+    --s-csp:  #5a8c4a;
+    --s-ins:  #8c6cb8;
+    --s-sci:  #3d8a78;
+    --s-lle:  #a44a8c;
+    --s-cn:   #b8585b;
+    --s-wsc:  #b8a83c;
+    --s-piano:#7a6c52;
+    --s-other:#5e5e64;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+  body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif; padding-bottom: 5rem; min-height: 100vh; }
+  .mono { font-family: "SF Mono", Menlo, ui-monospace, monospace; }
+  .muted { color: var(--muted); }
+  .text-2 { color: var(--text-2); }
+  .hidden { display: none !important; }
+  button, input, textarea { font: inherit; color: var(--text); }
+  button { background: var(--panel-2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  button:hover { border-color: var(--border-2); background: var(--panel-3); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  button.primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ghost { background: transparent; }
+  input[type=text], input[type=search], textarea { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; }
+  input[type=text]:focus, input[type=search]:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+  /* header */
+  header.app {
+    position: sticky; top: 0; z-index: 30;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; flex-wrap: wrap; }
+  .brand { font-weight: 600; letter-spacing: 0.02em; padding-right: 8px; border-right: 1px solid var(--border); margin-right: 4px; }
+  .brand .v { color: var(--muted); font-weight: 400; margin-left: 4px; font-size: 12px; }
+  nav.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+  nav.tabs button { padding: 6px 12px; background: transparent; border: 1px solid transparent; color: var(--text-2); }
+  nav.tabs button.active { color: var(--text); background: var(--panel-2); border-color: var(--border); }
+  nav.tabs button:hover { color: var(--text); }
+  .topbar .spacer { flex: 1; }
+  .topbar .actions { display: flex; gap: 6px; align-items: center; }
+  .topbar .actions input[type=search] { width: 180px; }
+  .topbar .actions button { padding: 5px 9px; font-size: 13px; }
+  #icon-help { width: 28px; padding: 5px 0; text-align: center; font-weight: 600; }
+
+  /* deadlines strip */
+  .deadlines-strip {
+    padding: 6px 14px 10px;
+    border-top: 1px solid transparent;
+  }
+  .dl-row { display: flex; gap: 8px; align-items: stretch; overflow-x: auto; padding-bottom: 2px; }
+  .deadline-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    min-width: 180px;
+    flex-shrink: 0;
+    transition: transform 0.1s;
+  }
+  .deadline-card:hover { transform: translateY(-1px); border-left-color: var(--border-2); }
+  .deadline-card.soon { border-left-color: var(--red); }
+  .deadline-card.near { border-left-color: var(--amber); }
+  .deadline-card.passed { opacity: 0.4; border-left-color: var(--border); }
+  .deadline-card .when { font-weight: 600; }
+  .deadline-card .when.soon { color: var(--red); }
+  .deadline-card .when.near { color: var(--amber); }
+  .deadline-card .what { color: var(--text-2); display: block; font-size: 12px; margin-top: 1px; }
+
+  /* timeline (the visual horizontal strip) */
+  .dl-timeline {
+    margin-top: 8px;
+    height: 28px; position: relative;
+    background: linear-gradient(to right, var(--panel) 0%, var(--panel) 100%);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .dl-track { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; }
+  .dl-progress { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent-soft); border-right: 1px solid var(--accent); }
+  .dl-marker {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; background: var(--text-2);
+    transform: translateX(-1px);
+  }
+  .dl-marker.soon { background: var(--red); }
+  .dl-marker.near { background: var(--amber); }
+  .dl-marker.passed { background: var(--border-2); }
+  .dl-marker .pin {
+    position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+    width: 8px; height: 8px; border-radius: 50%; background: inherit;
+  }
+  .dl-marker .lbl {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: 6px;
+    background: var(--panel-3); border: 1px solid var(--border-2);
+    padding: 3px 8px; border-radius: 4px;
+    font-size: 11px; white-space: nowrap; opacity: 0;
+    pointer-events: none; transition: opacity 0.1s; z-index: 50;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .dl-marker:hover .lbl { opacity: 1; }
+  .dl-today {
+    position: absolute; top: -4px; bottom: -4px;
+    width: 2px; background: var(--accent-2);
+    transform: translateX(-1px);
+    box-shadow: 0 0 8px var(--accent-2);
+  }
+
+  /* main */
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  .tab { animation: fadeIn 0.15s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+
+  /* day nav */
+  .day-nav { display: flex; align-items: center; gap: 8px; margin: 4px 0 14px; flex-wrap: wrap; }
+  .day-nav .spacer { flex: 1; }
+  .ring { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+  .ring svg { width: 32px; height: 32px; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 4; }
+  .ring .bg { stroke: var(--border); }
+  .ring .fg { stroke: var(--accent); transition: stroke-dasharray 0.4s; }
+  .ring .pct { font-weight: 600; color: var(--text); }
+
+  .day-banner { font-size: 22px; font-weight: 600; }
+  .day-banner small { font-weight: 400; color: var(--muted); margin-left: 8px; font-size: 14px; }
+  .day-note { color: var(--text-2); font-size: 13.5px; margin: 4px 0 14px; }
+
+  /* now card */
+  .now-card {
+    background: linear-gradient(135deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--border-2);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .now-card .now-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 4px; }
+  .now-card .now-time { font-family: "SF Mono", Menlo, monospace; font-size: 13px; color: var(--text-2); }
+  .now-card .now-task { font-size: 16px; margin-top: 4px; font-weight: 500; }
+  .now-card .now-progress { height: 3px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .now-card .now-progress > span { display: block; height: 100%; background: var(--accent); transition: width 0.5s; }
+  .now-card .now-next { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+  .now-card .now-next strong { color: var(--text-2); font-weight: 500; }
+  .now-card.idle { border-left-color: var(--muted); }
+
+  /* day table */
+  .day-table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .day-table tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .day-table tr:last-child { border-bottom: none; }
+  .day-table tr.trackable { background: var(--panel-2); }
+  .day-table tr.trackable.done { opacity: 0.5; }
+  .day-table tr.trackable.done .task-text { text-decoration: line-through; }
+  .day-table tr.now-block { background: var(--accent-soft) !important; box-shadow: inset 3px 0 0 var(--accent); }
+  .day-table tr.deadline-row { background: rgba(210, 58, 35, 0.10) !important; }
+  .day-table tr.deadline-row td.task .task-text { font-weight: 600; }
+  .day-table td { padding: 9px 10px; vertical-align: top; }
+  .day-table td.time { width: 130px; min-width: 130px; color: var(--text-2); white-space: nowrap; font-family: "SF Mono", Menlo, ui-monospace, monospace; font-size: 12.5px; }
+  .day-table td.task { width: auto; }
+  .day-table td.check { width: 40px; text-align: center; }
+  .task-text { display: block; }
+  .pills { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .pill {
+    display: inline-block;
+    font-size: 10.5px; padding: 1px 6px; border-radius: 10px;
+    font-weight: 600; letter-spacing: 0.02em;
+    color: white;
+    background: var(--s-other);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .pill.s-jlec { background: var(--s-jlec); }
+  .pill.s-critc { background: var(--s-critc); }
+  .pill.s-critd { background: var(--s-critd); }
+  .pill.s-math { background: var(--s-math); }
+  .pill.s-csp  { background: var(--s-csp); }
+  .pill.s-ins  { background: var(--s-ins); }
+  .pill.s-sci  { background: var(--s-sci); }
+  .pill.s-lle  { background: var(--s-lle); }
+  .pill.s-cn   { background: var(--s-cn); }
+  .pill.s-wsc  { background: var(--s-wsc); }
+  .pill.s-piano{ background: var(--s-piano); }
+  .pill.dur { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 400; }
+
+  /* day actions / notes */
+  .day-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .day-actions button { font-size: 12.5px; padding: 5px 10px; }
+  .notes-card {
+    margin-top: 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+  }
+  .notes-card label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: block; margin-bottom: 4px; }
+  .notes-card textarea { width: 100%; min-height: 60px; resize: vertical; background: transparent; border: none; padding: 4px 0; }
+  .notes-card textarea:focus { outline: none; }
+
+  /* week grid */
+  .week-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .week-cell {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; min-height: 130px; cursor: pointer; transition: transform 0.1s, border-color 0.1s;
+    display: flex; flex-direction: column;
+  }
+  .week-cell:hover { border-color: var(--border-2); }
+  .week-cell.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft); }
+  .week-cell.has-deadline { background: rgba(210, 58, 35, 0.08); }
+  .week-cell.empty { opacity: 0.3; cursor: default; min-height: 130px; }
+  .wc-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .wc-day { font-weight: 600; font-size: 13px; }
+  .wc-date { color: var(--muted); font-size: 11px; }
+  .wc-deadline { font-size: 11px; color: var(--red); font-weight: 600; margin-bottom: 4px; line-height: 1.3; }
+  .wc-tasks { font-size: 11.5px; color: var(--text-2); flex: 1; line-height: 1.4; }
+  .wc-tasks .pill { font-size: 9px; padding: 0 4px; }
+  .wc-pct { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .wc-pct .bar { flex: 1; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+  .wc-pct .bar > span { display: block; height: 100%; background: var(--accent); }
+
+  /* stats */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .stat-tile { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .stat-tile .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .stat-tile .val { font-size: 26px; font-weight: 600; margin-top: 4px; }
+  .stat-tile .sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+  .stats-section { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
+  .stats-section h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+  .stats-section .h-sub { font-size: 12px; color: var(--muted); margin: -8px 0 10px; }
+
+  .subj-bar { display: grid; grid-template-columns: 90px 1fr 90px; gap: 10px; align-items: center; padding: 4px 0; font-size: 12.5px; }
+  .subj-bar .name { color: var(--text-2); }
+  .subj-bar .track { background: var(--panel-3); border-radius: 3px; height: 14px; position: relative; overflow: hidden; }
+  .subj-bar .planned { position: absolute; left: 0; top: 0; bottom: 0; background: var(--border-2); border-radius: 3px; }
+  .subj-bar .done { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; transition: width 0.5s; }
+  .subj-bar .num { color: var(--muted); font-family: "SF Mono", Menlo, monospace; font-size: 11.5px; text-align: right; }
+
+  .week-completion { display: grid; grid-template-columns: 80px repeat(7, 1fr); gap: 4px; font-size: 11px; }
+  .wc-cell { aspect-ratio: 1; border-radius: 3px; background: var(--panel-3); position: relative; }
+  .wc-cell.l1 { background: rgba(139, 30, 30, 0.25); }
+  .wc-cell.l2 { background: rgba(139, 30, 30, 0.5); }
+  .wc-cell.l3 { background: rgba(139, 30, 30, 0.75); }
+  .wc-cell.l4 { background: var(--accent); }
+  .wc-cell.future { opacity: 0.25; }
+  .wc-cell .tt { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; background: var(--panel-3); border: 1px solid var(--border); border-radius: 3px; padding: 2px 6px; font-size: 10px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.1s; z-index: 5; }
+  .wc-cell:hover .tt { opacity: 1; }
+  .wc-row-label { color: var(--muted); padding: 2px 0; }
+
+  /* projects */
+  .pipeline { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .pl-step {
+    flex: 1 1 calc(20% - 4px);
+    min-width: 110px;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 6px 8px; font-size: 11.5px;
+    position: relative;
+    cursor: pointer;
+  }
+  .pl-step:hover { border-color: var(--border-2); }
+  .pl-step.done { background: rgba(79, 156, 97, 0.12); border-color: rgba(79, 156, 97, 0.4); }
+  .pl-step.current { border-color: var(--accent); }
+  .pl-step .step-name { font-weight: 600; }
+  .pl-step .step-meta { color: var(--muted); font-size: 10.5px; margin-top: 2px; }
+  .pl-step .step-pct { float: right; color: var(--muted); font-size: 10.5px; }
+
+  .exam-card {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
+  }
+  .exam-card .ec-name { font-weight: 600; font-size: 14px; }
+  .exam-card .ec-when { color: var(--text-2); font-size: 12px; }
+  .exam-card .ec-prep { color: var(--muted); font-size: 11.5px; }
+  .exam-card .ec-days { font-family: "SF Mono", Menlo, monospace; font-weight: 600; font-size: 16px; }
+  .exam-card .ec-days.soon { color: var(--red); }
+  .exam-card .ec-days.near { color: var(--amber); }
+  .exam-card .ec-days.passed { color: var(--muted); text-decoration: line-through; }
+  .exam-card.completed { opacity: 0.5; }
+
+  /* list (compressed all-weeks) */
+  .list-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .list-table th, .list-table td { padding: 7px 9px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+  .list-table th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .list-table tr.today td { background: rgba(139, 30, 30, 0.18); }
+  .list-table tr.has-deadline td.event { font-weight: 700; color: var(--text); }
+  .list-table tr.weekstart td { border-top: 2px solid var(--border-2); }
+  .list-table td.day { white-space: nowrap; width: 100px; }
+  .list-table td.event { width: 30%; color: var(--text-2); }
+  .list-table td.pct { width: 70px; }
+  .list-table td a { color: inherit; text-decoration: none; cursor: pointer; }
+  .list-table td a:hover { color: var(--accent); }
+  .list-table .mini-bar { display: inline-block; vertical-align: middle; width: 50px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-right: 6px; }
+  .list-table .mini-bar > span { display: block; height: 100%; background: var(--accent); }
+
+  /* search results */
+  .search-results { background: var(--panel); border: 1px solid var(--border-2); border-radius: var(--radius); padding: 12px; margin-bottom: 16px; }
+  .search-results h3 { margin: 0 0 8px; font-size: 13px; }
+  .search-result {
+    padding: 6px 8px; cursor: pointer; border-radius: 4px;
+    display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: baseline;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-result:hover { background: var(--panel-2); }
+  .search-result:last-child { border-bottom: none; }
+  .search-result .sr-day { color: var(--muted); font-size: 12px; }
+  .search-result .sr-task { font-size: 13px; }
+  .search-result mark { background: rgba(139, 30, 30, 0.4); color: var(--text); padding: 0 2px; border-radius: 2px; }
+
+  /* legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 11.5px; }
+  .legend .pill { cursor: pointer; user-select: none; }
+  .legend .pill.dim { opacity: 0.3; }
+
+  /* help overlay */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.15s;
+  }
+  .overlay-card {
+    background: var(--panel); border: 1px solid var(--border-2);
+    border-radius: 10px; padding: 20px 24px;
+    max-width: 480px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .overlay-card h2 { margin: 0 0 14px; font-size: 16px; }
+  .kbd-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .kbd-row:last-child { border-bottom: none; }
+  .kbd { font-family: "SF Mono", Menlo, monospace; background: var(--panel-3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+  .overlay-card .close-row { margin-top: 14px; text-align: right; }
+
+  /* confetti */
+  #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--accent);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px; padding: 10px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 90; font-size: 13px;
+    animation: slideUp 0.2s;
+  }
+  @keyframes slideUp { from { transform: translate(-50%, 10px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+  /* responsive */
+  @media (max-width: 720px) {
+    .topbar { padding: 6px 10px; gap: 6px; }
+    .topbar .actions input[type=search] { width: 130px; }
+    main { padding: 12px; }
+    .day-table td.time { width: 90px; min-width: 90px; font-size: 11.5px; }
+    .week-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .day-banner { font-size: 18px; }
+    nav.tabs button { padding: 5px 8px; font-size: 13px; }
+    .pl-step { flex: 1 1 calc(50% - 4px); }
+    .week-completion { grid-template-columns: 60px repeat(7, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .week-grid { grid-template-columns: 1fr; }
+    .topbar .actions input[type=search] { width: 100px; }
+    .topbar .brand { display: none; }
+  }
+
+  /* print */
+  @media print {
+    header.app, .day-actions, .day-nav, .notes-card, #confetti-canvas, .overlay { display: none !important; }
+    body { background: white; color: black; }
+    main { max-width: none; }
+    .day-table { background: white; border-color: #ccc; }
+    .day-table tr { background: white !important; }
+    .pill { border: 1px solid #999 !important; color: black !important; background: white !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="topbar">
+    <div class="brand">G10<span class="v">v2</span></div>
+    <nav class="tabs">
+      <button data-tab="today" class="active">Today</button>
+      <button data-tab="week">Week</button>
+      <button data-tab="stats">Stats</button>
+      <button data-tab="projects">Projects</button>
+      <button data-tab="list">List</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="actions">
+      <input type="search" id="search" placeholder="Search tasks…" autocomplete="off">
+      <button id="btn-export" title="Export state to JSON">Export</button>
+      <button id="btn-import" title="Import state from JSON">Import</button>
+      <button id="icon-help" title="Keyboard shortcuts (press ?)">?</button>
+    </div>
+  </div>
+  <div class="deadlines-strip">
+    <div class="dl-row" id="dl-row"></div>
+    <div class="dl-timeline" id="dl-timeline"></div>
+  </div>
+</header>
+
+<main>
+  <!-- TODAY -->
+  <section id="tab-today" class="tab">
+    <div class="now-card" id="now-card"></div>
+
+    <div class="day-nav">
+      <button id="nav-prev">‹ Prev</button>
+      <button id="nav-today" class="primary">Today</button>
+      <button id="nav-next">Next ›</button>
+      <div class="spacer"></div>
+      <span class="ring" id="day-ring"></span>
+    </div>
+
+    <div class="day-banner" id="day-banner"></div>
+    <div class="day-note" id="day-clamp-note"></div>
+    <div class="day-note" id="day-sub"></div>
+
+    <table class="day-table"><tbody id="day-body"></tbody></table>
+
+    <div class="day-actions">
+      <button id="day-mark-all">Mark all done</button>
+      <button id="day-clear">Clear day</button>
+      <button id="day-print" onclick="window.print()">Print</button>
+    </div>
+
+    <div class="notes-card">
+      <label for="day-notes">Notes for this day (autosaves)</label>
+      <textarea id="day-notes" placeholder="Reflections, blockers, partial progress, mood, anything you'll want to remember…"></textarea>
+    </div>
+  </section>
+
+  <!-- WEEK -->
+  <section id="tab-week" class="tab hidden">
+    <div class="week-nav">
+      <button id="week-prev">‹ Prev week</button>
+      <button id="week-now">This week</button>
+      <button id="week-next">Next week ›</button>
+      <div class="spacer"></div>
+      <span id="week-label" class="muted"></span>
+    </div>
+    <div class="week-grid" id="week-grid"></div>
+  </section>
+
+  <!-- STATS -->
+  <section id="tab-stats" class="tab hidden">
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <div class="stats-section">
+      <h3>Subject hours: planned vs done</h3>
+      <div class="h-sub">All trackable hours across the 38-day plan, grouped by detected subject.</div>
+      <div id="subj-bars"></div>
+    </div>
+
+    <div class="stats-section">
+      <h3>Daily completion heatmap</h3>
+      <div class="h-sub">% of trackable tasks checked per day. Each row = one week (Sat–Fri, matching the plan).</div>
+      <div class="week-completion" id="heatmap"></div>
+      <div class="legend" style="margin-top:10px">
+        <span class="muted">Less</span>
+        <span class="wc-cell" style="display:inline-block;width:14px;height:14px"></span>
+        <span class="wc-cell l1" style="display:inline-block;width:14px;height:14px"></span>
+        <span class="wc-cell l2" style="display:inline-block;width:14px;height:14px"></span>
+        <span class="wc-cell l3" style="display:inline-block;width:14px;height:14px"></span>
+        <span class="wc-cell l4" style="display:inline-block;width:14px;height:14px"></span>
+        <span class="muted">More</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="tab-projects" class="tab hidden">
+    <div class="stats-section">
+      <h3>JLEC Law pipeline</h3>
+      <div class="h-sub">Auto-derived from checked tasks. Submission target: <strong>Sun May 31</strong>.</div>
+      <div class="pipeline" id="jlec-pipeline"></div>
+    </div>
+
+    <div class="stats-section">
+      <h3>Exams &amp; submissions</h3>
+      <div class="h-sub">Countdowns and prep-task completion per exam/deliverable. Click any row to jump to its date.</div>
+      <div id="exam-list"></div>
+    </div>
+
+    <div class="stats-section">
+      <h3>Subject legend</h3>
+      <div class="h-sub">Click a tag to filter today's view (or to clear when active).</div>
+      <div class="legend" id="subj-legend"></div>
+    </div>
+  </section>
+
+  <!-- LIST -->
+  <section id="tab-list" class="tab hidden">
+    <table class="list-table">
+      <thead><tr><th>Day</th><th>Event</th><th>Work focus</th><th>Done</th></tr></thead>
+      <tbody id="list-body"></tbody>
+    </table>
+  </section>
+
+  <!-- search results overlay (in-page) -->
+  <div id="search-results" class="search-results hidden"></div>
+</main>
+
+<div id="help-overlay" class="overlay hidden">
+  <div class="overlay-card">
+    <h2>Keyboard shortcuts</h2>
+    <div class="kbd-row"><span><span class="kbd">←</span> <span class="kbd">→</span></span><span>Previous / next day (on Today tab)</span></div>
+    <div class="kbd-row"><span><span class="kbd">t</span></span><span>Jump to today</span></div>
+    <div class="kbd-row"><span><span class="kbd">1</span>–<span class="kbd">5</span></span><span>Switch tabs (Today / Week / Stats / Projects / List)</span></div>
+    <div class="kbd-row"><span><span class="kbd">/</span></span><span>Focus search</span></div>
+    <div class="kbd-row"><span><span class="kbd">?</span></span><span>Show this help</span></div>
+    <div class="kbd-row"><span><span class="kbd">Esc</span></span><span>Close overlay / clear search</span></div>
+    <div class="close-row"><button id="help-close">Close</button></div>
+  </div>
+</div>
+
+<canvas id="confetti-canvas" class="hidden"></canvas>
+
+<input type="file" id="import-file" accept="application/json" style="display:none">
+
+<script>
+// ============================================================
+// SOURCE: G10_End_of_Year_Plan_v2.md  -  keep both in sync
+// ============================================================
+const schedule = {
+  deadlines: [
+    { date: "2026-04-27", label: "JLEC S&T ethics request to Ms. Milligan", kind: "milestone" },
+    { date: "2026-04-27", label: "WSC registration finalized", kind: "milestone" },
+    { date: "2026-05-06", label: "Math formative + Design Crit C summative", kind: "exam" },
+    { date: "2026-05-09", label: "WSC Singapore Regional Day 1", kind: "event" },
+    { date: "2026-05-10", label: "WSC Day 2 / KILL DATE for JLEC S&T", kind: "milestone" },
+    { date: "2026-05-12", label: "Math Extended summative (Crit C+D)", kind: "exam" },
+    { date: "2026-05-14", label: "AP CSP exam", kind: "exam" },
+    { date: "2026-05-20", label: "Design Crit D + JLEC Law draft complete", kind: "exam" },
+    { date: "2026-05-21", label: "INS exam", kind: "exam" },
+    { date: "2026-05-22", label: "SCI exam + LLE exam", kind: "exam" },
+    { date: "2026-05-25", label: "Math Extended exam (Crit A)", kind: "exam" },
+    { date: "2026-05-26", label: "Chinese LAQ exam", kind: "exam" },
+    { date: "2026-05-31", label: "JLEC Law submission", kind: "milestone" }
+  ],
+  days: [
+    { date: "2026-04-25", label: "Sat Apr 25", note: "Setup + Design Crit C scoping + JLEC source reading kickoff.", focus: "Design Crit C scoping; JLEC source reading (Strawson, Greene & Cohen)", blocks: [
+      { time: "Now – 13:00", task: "Whatever you're doing, finish lunch by 13:00" },
+      { time: "13:00 – 14:00", task: "Design Crit C scoping: list exactly what's done, what's missing, estimate hours remaining. Write the number down.", trackable: true },
+      { time: "14:00 – 14:15", task: "Break" },
+      { time: "14:15 – 16:15", task: "JLEC source reading: Strawson, \"Freedom and Resentment\" (full read, annotate against v8 plan)", trackable: true },
+      { time: "16:15 – 16:45", task: "Walk, break, snack" },
+      { time: "16:45 – 18:30", task: "JLEC source reading: Greene & Cohen 2004 (start)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC source reading: Greene & Cohen finish + write 1-page summary against v8 plan", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: start Pereboom 2001 introduction" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-26", label: "Sun Apr 26", note: "Heavy day. Design Crit C catch-up + source reading.", focus: "Design Crit C heavy push; Math formative warmup; AP CSP FRQ; JLEC reading", blocks: [
+      { time: "7:30 – 8:30", task: "Wake, breakfast, light planning (review tomorrow's email drafts)" },
+      { time: "8:30 – 11:30", task: "Design Crit C heavy push (3 hrs)", trackable: true },
+      { time: "11:30 – 12:00", task: "Break, walk" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 14:30", task: "Math formative warmup (1.5 hrs) — sets up May 6 deliverable + summative prep", trackable: true },
+      { time: "14:30 – 15:30", task: "AP CSP FRQ practice session 1", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "JLEC source reading: Pereboom main chapters (2.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 20:30", task: "Design Crit C continued (1.5 hrs)", trackable: true },
+      { time: "20:30 – 21:00", task: "Draft Mon emails: Ms. Milligan ethics request, WSC submit confirmation" },
+      { time: "21:00 – 22:00", task: "Reading: Pereboom continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-27", label: "Mon Apr 27", note: "Critical Monday: ethics email + WSC registration submission.", focus: "Send ethics email; submit WSC; Design Crit C; JLEC reading (Pereboom)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Send ethics email to Ms. Milligan before school.", trackable: true, deadline: true },
+      { time: "8:30 – 13:05", task: "School" },
+      { time: "13:35 – 14:20", task: "SMART = WSC (final registration push, parent payments, judges confirm)", trackable: true },
+      { time: "14:20 – 15:30", task: "Block 4" },
+      { time: "15:30 – 16:30", task: "Transit, decompress, submit WSC registration online", trackable: true, deadline: true },
+      { time: "16:30 – 18:30", task: "Design Crit C (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: Pereboom continued", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: Pereboom" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-28", label: "Tue Apr 28", note: "WSC after-school day (recommended). Compressed work day.", focus: "WSC after-school; Design Crit C compressed; JLEC reading (Morse)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 17:30", task: "WSC after-school session (host first one)", trackable: true },
+      { time: "17:30 – 18:30", task: "Work Block 1 (compressed): Design Crit C", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: Morse", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: Morse continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-29", label: "Wed Apr 29", note: "", focus: "Design Crit C; JLEC reading (Duff)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Design Crit C (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: Duff", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: Duff continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-04-30", label: "Thu Apr 30", note: "", focus: "Design Crit C — aim 80%+ done; JLEC reading (McGeer)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Design Crit C (2 hrs) — aim for 80%+ done", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC source reading: McGeer", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: McGeer continued" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-01", label: "Fri May 1", note: "", focus: "AP CSP FRQ full mock; JLEC Locke + v8 plan re-read", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "AP CSP FRQ practice session 2 (2 hrs, full mock)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC: Locke (light pass) + read v8 plan with all sources fresh", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: any source gaps" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-02", label: "Sat May 2", note: "Theme: May 6 deliverables prep. JLEC outline.", focus: "JLEC Law detailed outline; Math formative practice; Design Crit C finalize", blocks: [
+      { time: "7:30 – 11:00", task: "Wake, free morning. JLEC Law detailed outline against v8 (3 hrs)", trackable: true },
+      { time: "11:00 – 12:00", task: "Piano" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:30", task: "Math formative practice problems (2.5 hrs)", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "Design Crit C finalize section (2.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC outline continued + map sources to sections (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: re-read Strawson selections for outline" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-03", label: "Sun May 3", note: "", focus: "Design Crit C polish; Math formative + summative prep starts; JLEC Section 1 draft; AP CSP FRQ", blocks: [
+      { time: "7:30 – 12:00", task: "Wake, free morning. Design Crit C polish (4.5 hrs) — aim ready-to-submit by Wed", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:30", task: "Math formative practice + summative prep starts (2.5 hrs)", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "JLEC Section 1 draft (2.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "AP CSP FRQ practice session 3 (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading: any source gaps" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-04", label: "Mon May 4", note: "", focus: "Design Crit C final polish; Math formative review", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Design Crit C final polish (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "Math formative review for Wednesday", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-05", label: "Tue May 5", note: "WSC after-school.", focus: "WSC session; Design Crit C final review; Math formative final practice + AP CSP FRQ", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 17:30", task: "WSC session", trackable: true },
+      { time: "17:30 – 18:30", task: "Design Crit C final review + format pass", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "Math formative final practice + AP CSP FRQ", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-06", label: "Wed May 6", note: "TWO DELIVERABLES DAY: Math formative + Design Crit C summative.", focus: "MATH FORMATIVE; DESIGN CRIT C SUBMISSION; JLEC Section 2 draft", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Light Math review only. Confirm Design Crit C is uploaded/ready." },
+      { time: "8:45", task: "MATH FORMATIVE (in-class, period 1)", trackable: true, deadline: true },
+      { time: "9:00 – 16:00", task: "Rest of school day" },
+      { time: "16:00", task: "DESIGN CRIT C SUBMISSION (deadline 4pm)", trackable: true, deadline: true },
+      { time: "16:00 – 18:30", task: "JLEC Section 2 draft (2 hrs) — momentum from clear deliverables", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC Section 2 continued", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-07", label: "Thu May 7", note: "", focus: "JLEC Section 1 revision; Math summative prep (weak areas)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC Section 1 revision (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "Math summative prep (key topics list, identify weak areas)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-08", label: "Fri May 8", note: "Last working day before WSC weekend. Ethics check by EOD.", focus: "Math summative deep prep; JLEC Section 2 finish; pack WSC kit", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Math summative prep deep (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC: Section 2 finish, prep mind for WSC weekend", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Pack WSC bag, charge devices, set out kit for tomorrow." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-09", label: "Sat May 9", note: "WSC DAY 1 — Singapore Regional. No academic work.", focus: "WSC Day 1 — Nexus", blocks: [
+      { time: "All day", task: "WSC Singapore Regional Round at Nexus — support delegation. No academic work.", trackable: true, deadline: true },
+      { time: "Evening", task: "Hydrate, eat well, rest. Tomorrow is also WSC." },
+      { time: "22:00", task: "Bed (early if possible)" }
+    ]},
+    { date: "2026-05-10", label: "Sun May 10", note: "WSC DAY 2 + light Math eve. JLEC S&T kill date.", focus: "WSC Day 2; light Math summative review; JLEC S&T decision", blocks: [
+      { time: "All day", task: "WSC Day 2. Final round, ceremonies.", trackable: true, deadline: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Light Math summative review (1.5–2 hrs) — no new content. JLEC S&T decision finalized tonight.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Sleep early." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-11", label: "Mon May 11", note: "Math summative push day.", focus: "Math summative prep (sim test conditions); AP CSP FRQ run; Math weak-spot final", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Light Math recall." },
+      { time: "8:30 – 13:05", task: "School" },
+      { time: "13:35 – 14:20", task: "SMART = WSC (debrief regional round, plan next steps)" },
+      { time: "14:20 – 15:30", task: "Block 4" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Math summative prep (2 hrs) — simulate test conditions", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 20:30", task: "AP CSP FRQ run (45 min, format only)", trackable: true },
+      { time: "20:30 – 21:00", task: "Math final review (light, weak spots only)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Sleep early before summative." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-12", label: "Tue May 12", note: "MATH EXTENDED SUMMATIVE (Crit C+D, ~2x exam weight).", focus: "MATH SUMMATIVE; JLEC Section 3 outline; AP CSP FRQ final practice", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast. Light Math recall warmup, no new content." },
+      { time: "8:30 – 11:30", task: "School blocks 1–2" },
+      { time: "11:45 – ~12:45", task: "MATH EXTENDED SUMMATIVE (Crit C+D) in-class", trackable: true, deadline: true },
+      { time: "12:45 – 15:30", task: "Rest of school day" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "Easy work: JLEC Section 3 outline, low-cognitive-load", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "AP CSP FRQ final practice (1+ hr)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-13", label: "Wed May 13", note: "AP CSP final prep + INS first pass.", focus: "AP CSP final review; INS first pass; JLEC Section 3 draft", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 17:15", task: "AP CSP final review (45 min, light, format/strategy only)", trackable: true },
+      { time: "17:15 – 18:30", task: "INS first pass (1.25 hrs) — chunked notes per unit, gap inventory", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC Section 3 draft (1.25 hrs) — lighter touch", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Pack pen/calculator/clear pencil case for tomorrow's exam. Set alarm. Early sleep." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-14", label: "Thu May 14", note: "AP CSP EXAM DAY.", focus: "AP CSP EXAM (3h15m); collapse + rest", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast (substantial). Calm. No cramming." },
+      { time: "8:30 – 12:00", task: "School (morning blocks). Hydrate, snack at break." },
+      { time: "12:15 – 15:30", task: "AP CSP EXAM (3 hr 15 min)", trackable: true, deadline: true },
+      { time: "15:30 – 18:30", task: "COLLAPSE. Walk, eat, rest. NO study. NO JLEC. NO screens if possible." },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light, by feel)" },
+      { time: "19:45 – 21:00", task: "Optional: 30 min JLEC review (NOT drafting) if energy. Otherwise rest.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading (fiction, not work)" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-15", label: "Fri May 15", note: "Recovery + JLEC drafting heavy.", focus: "JLEC Section 3 finish; LLE first pass", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC Section 3 finish (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "LLE first pass (1.25 hrs) — chunked notes on key texts, themes", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-16", label: "Sat May 16", note: "Theme: JLEC draft completion + first two exams ahead.", focus: "JLEC Section 4; INS pass 2; SCI first pass; JLEC Section 4 finish", blocks: [
+      { time: "7:30 – 12:00", task: "Free morning. JLEC Section 4 draft (4.5 hrs)", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:00", task: "INS pass 2: Units 3+4 deep + practice essay outline (2 hrs)", trackable: true },
+      { time: "15:00 – 15:30", task: "Break" },
+      { time: "15:30 – 18:30", task: "SCI first pass (3 hrs) — chunked notes per unit, identify long-answer rubric language", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC Section 4 finish + Section 5 outline (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-17", label: "Sun May 17", note: "", focus: "JLEC Section 5; SCI pass 2; Chinese first pass; JLEC opener/closer", blocks: [
+      { time: "7:30 – 12:00", task: "Free morning. JLEC Section 5 draft (4.5 hrs)", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:30", task: "SCI pass 2 (2.5 hrs) — structured-response practice, rubric phrasing", trackable: true },
+      { time: "15:30 – 16:00", task: "Break" },
+      { time: "16:00 – 18:30", task: "Chinese first pass (2.5 hrs) — vocab, build 3–4 paragraph templates", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC Section 5 finish + opener/closer (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-18", label: "Mon May 18", note: "", focus: "JLEC opener/closer revision + first stitch-together; LLE pass 2", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 13:05", task: "School" },
+      { time: "13:35 – 14:20", task: "SMART = WSC (or use for LLE quote review if WSC light)" },
+      { time: "14:20 – 15:30", task: "Block 4" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC opener/closer revision + first stitch-together pass (2 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "LLE pass 2: criteria practice, key text analysis (1.25 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-19", label: "Tue May 19", note: "WSC after-school (last regular before exam block).", focus: "WSC session; JLEC revision pass 1 (structural); INS pass 3", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 17:30", task: "WSC session (last regular one before exam block)", trackable: true },
+      { time: "17:30 – 18:30", task: "JLEC revision pass 1 (structural)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "INS pass 3: Units 1+2 + cross-unit synthesis (1.25 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Quick SCI recall warmup." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-20", label: "Wed May 20", note: "JLEC DRAFT DEADLINE + Design Crit D submission.", focus: "DESIGN CRIT D SUBMISSION; JLEC final smooth-out (v9 draft); INS final review", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:00", task: "DESIGN CRIT D SUBMISSION (deadline 4pm)", trackable: true, deadline: true },
+      { time: "16:00 – 18:30", task: "JLEC final smooth-out (2.5 hrs) — all five sections + intro + conclusion. Set aside as v9 draft.", trackable: true, deadline: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "INS final review (light, ~45 min) + light SCI recall", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Lay out exam kit for tomorrow. Early sleep." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-21", label: "Thu May 21", note: "INS EXAM (Crit A, C, D).", focus: "INS EXAM; SCI pass 3 deep; LLE final prep", blocks: [
+      { time: "7:00 – 8:00", task: "Wake, breakfast. INS recall warmup: Ten Stages, four experiments, civilization collapse summaries (15 min)." },
+      { time: "8:35", task: "In seat" },
+      { time: "8:45 – 10:15", task: "INS EXAM (Crit A, C, D)", trackable: true, deadline: true },
+      { time: "10:15 – 13:00", task: "Rest of morning, lunch" },
+      { time: "13:00 – 15:30", task: "School (rest of day)" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "SCI pass 3 deep (2 hrs) — long-answer practice", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light)" },
+      { time: "19:45 – 21:00", task: "LLE final prep: key quotes drilled into long-term memory, criteria language ready", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Sleep early. Tomorrow is double-exam day." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-22", label: "Fri May 22", note: "DOUBLE EXAM (SCI + LLE).", focus: "SCI EXAM; LLE EXAM; rest; light Math review (kick off Math weekend)", blocks: [
+      { time: "6:30 – 7:30", task: "Wake early. Substantial breakfast. Hydrate." },
+      { time: "7:30 – 8:30", task: "Light SCI recall (concepts, key terms). Then quick LLE recall (key quotes, theme-statements)." },
+      { time: "8:35", task: "In seat" },
+      { time: "8:45 – 10:15", task: "SCI EXAM (Crit A, C, D)", trackable: true, deadline: true },
+      { time: "10:15 – 11:00", task: "Break: snack, water, switch mental gears to LLE. Read prepared LLE statements out loud." },
+      { time: "11:00 – 12:30", task: "LLE EXAM (Crit A, C, D)", trackable: true, deadline: true },
+      { time: "12:30 – 15:30", task: "School (rest of day) — low-energy day, attend, don't push" },
+      { time: "15:30 – 18:30", task: "REST. Walk, food, decompress. Two exams in one morning is brutal." },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light or skip)" },
+      { time: "19:45 – 21:00", task: "Math review (light, 1.25 hrs) — kick off Math weekend", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-23", label: "Sat May 23", note: "Math + Chinese, Chinese-weighted.", focus: "Math practice problems; Chinese deep prep; Math weak spots; Chinese timed writing", blocks: [
+      { time: "7:30 – 11:00", task: "Free morning. Math practice problems (3 hrs)", trackable: true },
+      { time: "11:00 – 12:00", task: "Piano" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 17:00", task: "Chinese deep prep (4 hrs) — vocab drills, refine paragraph templates, 100+ char responses", trackable: true },
+      { time: "17:00 – 18:30", task: "Math weak spots + practice (1.5 hrs)", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Chinese practice (2 hrs) — timed writing", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-24", label: "Sun May 24", note: "Chinese-heavy day.", focus: "Chinese heavy timed practice; Math final practice (past papers); Chinese final templates", blocks: [
+      { time: "7:30 – 12:00", task: "Free morning. Chinese heavy (4.5 hrs) — timed practice, sentence patterns drilled", trackable: true },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 16:00", task: "Math final practice (3 hrs) — past papers if available", trackable: true },
+      { time: "16:00 – 16:30", task: "Break" },
+      { time: "16:30 – 18:30", task: "Chinese final templates (2 hrs) — 4–5 plug-and-play structures ready", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Math light review + Chinese vocab recall mixed (2 hrs)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading. Pack exam kit. Set alarm." },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-25", label: "Mon May 25", note: "MATH EXTENDED EXAM (Crit A).", focus: "MATH EXAM; Chinese final pass; Chinese final templates rehearsal", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 13:05", task: "School blocks 1–3" },
+      { time: "13:05 – 13:35", task: "Lunch (light, you have an exam after)" },
+      { time: "13:35 – 13:45", task: "Math recall: formulas, methods. No new content." },
+      { time: "13:45 – 15:15", task: "MATH EXTENDED EXAM (Crit A)", trackable: true, deadline: true },
+      { time: "15:15 – 16:30", task: "Decompress" },
+      { time: "16:30 – 18:30", task: "Chinese final pass (2 hrs) — vocab recall, template review", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano (light)" },
+      { time: "19:45 – 20:45", task: "Chinese final templates rehearsal (1 hr)", trackable: true },
+      { time: "20:45 – 21:00", task: "Pack exam kit for tomorrow. Set alarm." },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed early" }
+    ]},
+    { date: "2026-05-26", label: "Tue May 26", note: "CHINESE LAQ EXAM — last G10 exam.", focus: "CHINESE LAQ EXAM; rest; JLEC cold read", blocks: [
+      { time: "6:30 – 7:30", task: "Wake early. Breakfast. Chinese vocab recall (~45 min)." },
+      { time: "8:35", task: "In seat" },
+      { time: "8:45 – 10:15", task: "CHINESE LAQ EXAM", trackable: true, deadline: true },
+      { time: "10:15 – 15:30", task: "Rest of school day. G10 EXAMS COMPLETE." },
+      { time: "15:30 – 18:30", task: "REST. Eat. Walk. Sleep if needed." },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC cold read — open the v9 draft, read start to finish, no editing. Big-picture notes only.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-27", label: "Wed May 27", note: "", focus: "JLEC structural revision pass (2x sessions)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School (post-exam, lighter feel)" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC structural revision pass (2 hrs) — addressing big-picture notes from cold read", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC structural revision continued", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-28", label: "Thu May 28", note: "", focus: "JLEC sentence-level pass; JLEC AI feedback pipeline run 1 (R1–R5)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC sentence-level pass (2 hrs) — prose tightening, transitions", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC AI feedback pipeline run 1 (1.25 hrs) — R1–R5 sequential reviewers", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-29", label: "Fri May 29", note: "", focus: "JLEC AI feedback integration (R1–R5 fixes); pipeline run 2 (R6+, citations)", blocks: [
+      { time: "7:00 – 8:30", task: "Wake, breakfast" },
+      { time: "8:30 – 15:30", task: "School" },
+      { time: "15:30 – 16:30", task: "Transit, decompress" },
+      { time: "16:30 – 18:30", task: "JLEC AI feedback integration (2 hrs) — apply R1–R5 fixes", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 19:45", task: "Piano" },
+      { time: "19:45 – 21:00", task: "JLEC AI feedback pipeline run 2 (R6+ if useful, citations check)", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-30", label: "Sat May 30", note: "Theme: Submit. Recover.", focus: "JLEC final polish (line, citations, format); JLEC second AI pass; JLEC final read-aloud + submit-ready", blocks: [
+      { time: "7:30 – 11:00", task: "Free morning. JLEC final polish (3.5 hrs) — line edits, citations, formatting", trackable: true },
+      { time: "11:00 – 12:00", task: "Piano" },
+      { time: "12:00 – 13:00", task: "Lunch" },
+      { time: "13:00 – 15:00", task: "JLEC second AI feedback pass (2 hrs)", trackable: true },
+      { time: "15:00 – 18:30", task: "JLEC final read-aloud + final fixes (3.5 hrs). Submit-ready.", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "JLEC S&T decision finalized if alive: submit or formally defer. Otherwise rest.", trackable: true },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-05-31", label: "Sun May 31", note: "JLEC LAW SUBMISSION DAY.", focus: "SUBMIT JLEC LAW; celebrate; light VPS Veritas prep", blocks: [
+      { time: "7:30 – 10:00", task: "Free morning. JLEC final read before submission (no major edits, just last-look)." },
+      { time: "10:00 – 11:00", task: "SUBMIT JLEC LAW. Confirm receipt. Screenshot confirmation. Save to outputs.", trackable: true, deadline: true },
+      { time: "11:00 – 13:00", task: "CELEBRATE. Walk, food, see Felix, anything off-screen." },
+      { time: "13:00 – 18:30", task: "Free time. VPS Veritas prep (review docs, set up workspace) if energy. Otherwise rest.", trackable: true },
+      { time: "18:30 – 19:00", task: "Dinner" },
+      { time: "19:00 – 21:00", task: "Free / family time" },
+      { time: "21:00 – 22:00", task: "Reading" },
+      { time: "22:00", task: "Bed" }
+    ]},
+    { date: "2026-06-01", label: "Mon Jun 1 – Fri Jun 5", note: "VPS onboarding + recovery. Loose schedule.", focus: "After-school work shifts to VPS Veritas (Singapore phase). IEEE production sim resumable. Symphony optional.", blocks: [
+      { time: "All week", task: "Loose schedule. After-school work shifts to VPS Veritas (in-person Singapore phase, ~May 28+ or per Andrew's confirmation)." },
+      { time: "Evenings", task: "IEEE production simulation can resume if energy. Symphony work optional.", trackable: true },
+      { time: "Recovery", task: "Catch up on sleep, walks, food. G10 done.", trackable: true }
+    ]}
+  ]
+};
+
+// JLEC pipeline definition (matched to tasks by substring on a given date)
+const jlecPipeline = [
+  { id: "sources", name: "Source reading", desc: "7 thinkers", match: { from: "2026-04-25", to: "2026-05-01", needle: /JLEC.*(reading|Locke)/i }},
+  { id: "outline", name: "Detailed outline", desc: "May 2", match: { from: "2026-05-02", to: "2026-05-02", needle: /JLEC.*outline/i }},
+  { id: "s1", name: "Section 1", desc: "draft + revise", match: { from: "2026-05-03", to: "2026-05-07", needle: /JLEC Section 1/i }},
+  { id: "s2", name: "Section 2", desc: "draft + finish", match: { from: "2026-05-06", to: "2026-05-08", needle: /JLEC.*Section 2/i }},
+  { id: "s3", name: "Section 3", desc: "outline → draft → finish", match: { from: "2026-05-12", to: "2026-05-15", needle: /JLEC Section 3/i }},
+  { id: "s4", name: "Section 4", desc: "May 16", match: { from: "2026-05-16", to: "2026-05-16", needle: /JLEC Section 4/i }},
+  { id: "s5", name: "Section 5", desc: "May 17", match: { from: "2026-05-16", to: "2026-05-17", needle: /JLEC Section 5/i }},
+  { id: "stitch", name: "Stitch + opener/closer", desc: "May 17–18", match: { from: "2026-05-17", to: "2026-05-18", needle: /(opener\/closer|stitch-together)/i }},
+  { id: "rev1", name: "Revision pass 1", desc: "structural", match: { from: "2026-05-19", to: "2026-05-19", needle: /JLEC revision pass 1/i }},
+  { id: "v9", name: "v9 draft (deadline)", desc: "May 20", match: { from: "2026-05-20", to: "2026-05-20", needle: /final smooth-out/i }},
+  { id: "cold", name: "Cold read", desc: "May 26", match: { from: "2026-05-26", to: "2026-05-26", needle: /cold read/i }},
+  { id: "struct", name: "Structural revision", desc: "May 27", match: { from: "2026-05-27", to: "2026-05-27", needle: /structural revision/i }},
+  { id: "sentence", name: "Sentence-level", desc: "May 28", match: { from: "2026-05-28", to: "2026-05-28", needle: /sentence-level/i }},
+  { id: "ai1", name: "AI feedback R1–R5", desc: "May 28–29", match: { from: "2026-05-28", to: "2026-05-29", needle: /AI feedback (pipeline run 1|integration)/i }},
+  { id: "ai2", name: "AI feedback R6+", desc: "May 29–30", match: { from: "2026-05-29", to: "2026-05-30", needle: /(pipeline run 2|second AI)/i }},
+  { id: "polish", name: "Final polish", desc: "May 30", match: { from: "2026-05-30", to: "2026-05-30", needle: /(final polish|read-aloud)/i }},
+  { id: "submit", name: "SUBMIT", desc: "May 31", match: { from: "2026-05-31", to: "2026-05-31", needle: /SUBMIT JLEC/i }}
+];
+
+// Exam definitions (with date + name + subject for prep filtering)
+const examList = [
+  { id: "math-form", date: "2026-05-06", name: "Math formative", short: "Math (in-class)", prepSubj: "math" },
+  { id: "critc",     date: "2026-05-06", name: "Design Crit C summative", short: "Submission, 4pm", prepSubj: "critc" },
+  { id: "math-sum",  date: "2026-05-12", name: "Math Extended summative", short: "Crit C+D, ~2× exam weight", prepSubj: "math" },
+  { id: "csp",       date: "2026-05-14", name: "AP CSP exam", short: "3h15m", prepSubj: "csp" },
+  { id: "critd",     date: "2026-05-20", name: "Design Crit D summative", short: "Submission, 4pm", prepSubj: "critd" },
+  { id: "ins",       date: "2026-05-21", name: "INS exam", short: "Crit A, C, D", prepSubj: "ins" },
+  { id: "sci",       date: "2026-05-22", name: "SCI exam", short: "Crit A, C, D — morning", prepSubj: "sci" },
+  { id: "lle",       date: "2026-05-22", name: "LLE exam", short: "Crit A, C, D — late morning", prepSubj: "lle" },
+  { id: "math-ex",   date: "2026-05-25", name: "Math Extended exam", short: "Crit A only", prepSubj: "math" },
+  { id: "cn",        date: "2026-05-26", name: "Chinese LAQ exam", short: "Last G10 exam", prepSubj: "cn" },
+  { id: "jlec",      date: "2026-05-31", name: "JLEC Law submission", short: "Final submit", prepSubj: "jlec" }
+];
+
+// ============================================================
+// Subjects (auto-tag patterns)
+// ============================================================
+const SUBJECTS = [
+  { key: "jlec",  label: "JLEC",     pat: /JLEC/i },
+  { key: "critc", label: "Crit C",   pat: /Design Crit C|Crit C(?!ode)/i },
+  { key: "critd", label: "Crit D",   pat: /Design Crit D|Crit D/i },
+  { key: "math",  label: "Math",     pat: /\bMath\b/i },
+  { key: "csp",   label: "AP CSP",   pat: /AP CSP|CSP\b/i },
+  { key: "ins",   label: "INS",      pat: /\bINS\b/i },
+  { key: "sci",   label: "SCI",      pat: /\bSCI\b/i },
+  { key: "lle",   label: "LLE",      pat: /\bLLE\b/i },
+  { key: "cn",    label: "Chinese",  pat: /Chinese/i },
+  { key: "wsc",   label: "WSC",      pat: /\bWSC\b/i },
+  { key: "piano", label: "Piano",    pat: /\bPiano\b/i }
+];
+
+// ============================================================
+// Helpers
+// ============================================================
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const pad = n => String(n).padStart(2, "0");
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function nowMinutes() {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+}
+function isoToDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m-1, d);
+}
+function daysBetween(aIso, bIso) {
+  return Math.round((isoToDate(bIso) - isoToDate(aIso)) / 86400000);
+}
+function fmtMin(min) { return `${Math.floor(min/60)}:${pad(min%60)}`; }
+function dayOfWeek(iso) { return isoToDate(iso).getDay(); }
+
+const PLAN_START = "2026-04-25";
+const PLAN_END = "2026-06-05";
+
+function detectSubjects(text) {
+  const tags = [];
+  for (const s of SUBJECTS) if (s.pat.test(text)) tags.push(s);
+  return tags;
+}
+function parseTime(timeStr) {
+  if (!timeStr) return null;
+  let m = timeStr.match(/(\d{1,2}):(\d{2})\s*[–-]\s*~?(\d{1,2}):(\d{2})/);
+  if (m) {
+    return { start: +m[1]*60 + +m[2], end: +m[3]*60 + +m[4], range: true };
+  }
+  m = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (m) return { start: +m[1]*60 + +m[2], end: null, range: false };
+  if (/^now\s*[–-]\s*(\d{1,2}):(\d{2})/i.test(timeStr)) {
+    const m2 = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (m2) return { start: nowMinutes(), end: +m2[1]*60 + +m2[2], range: true, dynamic: true };
+  }
+  if (/all day/i.test(timeStr)) return { start: 0, end: 24*60, range: true };
+  if (/evening/i.test(timeStr)) return { start: 18*60, end: 22*60, range: true };
+  return null;
+}
+function blockDurationMin(b) {
+  const t = parseTime(b.time);
+  if (t && t.range) return Math.max(0, t.end - t.start);
+  return 0;
+}
+
+// ============================================================
+// Storage
+// ============================================================
+const ST = {
+  check(date, idx) { return localStorage.getItem(`g10:${date}:${idx}`) === "1"; },
+  setCheck(date, idx, v) {
+    if (v) localStorage.setItem(`g10:${date}:${idx}`, "1");
+    else localStorage.removeItem(`g10:${date}:${idx}`);
+  },
+  note(date) { return localStorage.getItem(`g10:note:${date}`) || ""; },
+  setNote(date, v) {
+    if (v) localStorage.setItem(`g10:note:${date}`, v);
+    else localStorage.removeItem(`g10:note:${date}`);
+  },
+  filter() { return localStorage.getItem("g10:filter") || ""; },
+  setFilter(v) {
+    if (v) localStorage.setItem("g10:filter", v);
+    else localStorage.removeItem("g10:filter");
+  },
+  exportAll() {
+    const out = { version: 2, exported: new Date().toISOString(), data: {} };
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("g10:")) out.data[k] = localStorage.getItem(k);
+    }
+    return out;
+  },
+  importAll(obj) {
+    if (!obj || !obj.data) throw new Error("Invalid format");
+    Object.keys(localStorage).filter(k => k.startsWith("g10:")).forEach(k => localStorage.removeItem(k));
+    Object.entries(obj.data).forEach(([k, v]) => { if (k.startsWith("g10:")) localStorage.setItem(k, v); });
+  }
+};
+
+// ============================================================
+// State
+// ============================================================
+const state = {
+  tab: "today",
+  currentISO: todayISO(),
+  currentNote: "",
+  weekOffset: 0, // for week tab
+  filter: ST.filter(), // subject filter
+  searchQuery: ""
+};
+
+function clampToPlan(iso) {
+  if (iso < PLAN_START) return { iso: PLAN_START, note: `Today (${iso}) is before the plan starts. Showing first day.` };
+  if (iso > PLAN_END) return { iso: PLAN_END, note: `Today (${iso}) is after the plan ends. Showing last day.` };
+  if (schedule.days.find(d => d.date === iso)) return { iso, note: "" };
+  if (iso >= "2026-06-01" && iso <= "2026-06-05") return { iso: "2026-06-01", note: `Showing Jun 1–5 loose week.` };
+  return { iso: PLAN_START, note: "" };
+}
+function dayIndex(iso) { return schedule.days.findIndex(d => d.date === iso); }
+
+// ============================================================
+// Subject pills HTML
+// ============================================================
+function pillHtml(subj) {
+  return `<span class="pill s-${subj.key}" data-key="${subj.key}">${subj.label}</span>`;
+}
+function durationPill(min) {
+  if (min <= 0) return "";
+  const h = min / 60;
+  const txt = h >= 1 ? `${h % 1 === 0 ? h : h.toFixed(1)}h` : `${min}m`;
+  return `<span class="pill dur">${txt}</span>`;
+}
+
+// ============================================================
+// Now Card
+// ============================================================
+function findCurrentBlock(day) {
+  const now = nowMinutes();
+  for (let i = 0; i < day.blocks.length; i++) {
+    const t = parseTime(day.blocks[i].time);
+    if (!t) continue;
+    if (t.range && now >= t.start && now < t.end) return { idx: i, t };
+  }
+  return null;
+}
+function findNextBlock(day, fromIdx) {
+  const now = nowMinutes();
+  const start = (fromIdx ?? -1) + 1;
+  for (let i = start; i < day.blocks.length; i++) {
+    const t = parseTime(day.blocks[i].time);
+    if (!t) continue;
+    if (t.start > now) return { idx: i, t };
+  }
+  return null;
+}
+function renderNowCard() {
+  const card = $("#now-card");
+  const isToday = state.currentISO === todayISO();
+  if (!isToday) {
+    card.classList.add("hidden");
+    return;
+  }
+  card.classList.remove("hidden");
+  const day = schedule.days[dayIndex(state.currentISO)];
+  if (!day) { card.classList.add("hidden"); return; }
+  const cur = findCurrentBlock(day);
+  const now = nowMinutes();
+  if (cur) {
+    card.classList.remove("idle");
+    const b = day.blocks[cur.idx];
+    const remaining = cur.t.end - now;
+    const total = cur.t.end - cur.t.start;
+    const pct = ((now - cur.t.start) / total) * 100;
+    const next = findNextBlock(day, cur.idx);
+    card.innerHTML = `
+      <div class="now-label">Right now &middot; ${fmtMin(now)}</div>
+      <div class="now-time mono">${b.time}  ·  ${remaining} min left</div>
+      <div class="now-task">${escapeHtml(b.task)}</div>
+      <div class="now-progress"><span style="width:${pct}%"></span></div>
+      <div class="now-next">${next ? `<strong>Next ${fmtMin(next.t.start)}:</strong> ${escapeHtml(day.blocks[next.idx].task)}` : `<strong>End of scheduled day.</strong>`}</div>
+    `;
+  } else {
+    const next = findNextBlock(day, -1);
+    card.classList.add("idle");
+    if (next) {
+      const minsTo = next.t.start - now;
+      card.innerHTML = `
+        <div class="now-label">Buffer &middot; ${fmtMin(now)}</div>
+        <div class="now-task">No block running.</div>
+        <div class="now-next"><strong>Next ${fmtMin(next.t.start)}</strong> (in ${minsTo} min): ${escapeHtml(day.blocks[next.idx].task)}</div>
+      `;
+    } else {
+      card.innerHTML = `<div class="now-label">Day complete</div><div class="now-task">No more scheduled blocks today.</div>`;
+    }
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+// ============================================================
+// Day view
+// ============================================================
+function renderDay() {
+  const idx = dayIndex(state.currentISO);
+  if (idx === -1) return;
+  const day = schedule.days[idx];
+  const isToday = day.date === todayISO() || (day.date === "2026-06-01" && todayISO() >= "2026-06-01" && todayISO() <= "2026-06-05");
+
+  $("#day-banner").innerHTML = `${escapeHtml(day.label)}${isToday ? `  <small>today</small>` : ""}`;
+  $("#day-clamp-note").textContent = state.currentNote;
+  $("#day-clamp-note").style.display = state.currentNote ? "block" : "none";
+  $("#day-sub").textContent = day.note || "";
+  $("#day-sub").style.display = day.note ? "block" : "none";
+
+  // notes textarea
+  $("#day-notes").value = ST.note(day.date);
+
+  const tbody = $("#day-body");
+  tbody.innerHTML = "";
+  const cur = isToday ? findCurrentBlock(day) : null;
+
+  day.blocks.forEach((b, i) => {
+    const subjects = detectSubjects(b.task);
+    if (state.filter && b.trackable && !subjects.find(s => s.key === state.filter)) {
+      // dim non-matching trackable rows
+    }
+    const tr = document.createElement("tr");
+    if (b.trackable) tr.classList.add("trackable");
+    if (b.deadline) tr.classList.add("deadline-row");
+    const checked = b.trackable && ST.check(day.date, i);
+    if (checked) tr.classList.add("done");
+    if (cur && cur.idx === i) tr.classList.add("now-block");
+    if (state.filter && b.trackable && !subjects.find(s => s.key === state.filter)) tr.style.opacity = "0.35";
+
+    const dur = blockDurationMin(b);
+    const pillsHtml = subjects.map(pillHtml).join("") + (b.trackable && dur > 0 ? durationPill(dur) : "");
+
+    tr.innerHTML = `
+      <td class="time mono">${escapeHtml(b.time)}</td>
+      <td class="task"><span class="task-text">${escapeHtml(b.task)}</span>${pillsHtml ? `<div class="pills">${pillsHtml}</div>` : ""}</td>
+      <td class="check">${b.trackable ? `<input type="checkbox" ${checked ? "checked" : ""} aria-label="done">` : ""}</td>
+    `;
+    if (b.trackable) {
+      tr.querySelector("input").addEventListener("change", e => {
+        ST.setCheck(day.date, i, e.target.checked);
+        if (e.target.checked) tr.classList.add("done"); else tr.classList.remove("done");
+        renderDayRing();
+        if (e.target.checked) checkDayCompletion(day);
+      });
+    }
+    tbody.appendChild(tr);
+  });
+
+  $("#nav-prev").disabled = idx === 0;
+  $("#nav-next").disabled = idx === schedule.days.length - 1;
+
+  renderNowCard();
+  renderDayRing();
+}
+
+function renderDayRing() {
+  const idx = dayIndex(state.currentISO);
+  if (idx === -1) return;
+  const day = schedule.days[idx];
+  let total = 0, done = 0;
+  day.blocks.forEach((b, i) => {
+    if (b.trackable) { total++; if (ST.check(day.date, i)) done++; }
+  });
+  const pct = total === 0 ? 0 : Math.round(100 * done / total);
+  const r = 14, c = 2 * Math.PI * r;
+  const dash = (pct / 100) * c;
+  $("#day-ring").innerHTML = `
+    <svg width="32" height="32" viewBox="0 0 32 32">
+      <circle class="bg" cx="16" cy="16" r="${r}"></circle>
+      <circle class="fg" cx="16" cy="16" r="${r}" stroke-dasharray="${dash} ${c}"></circle>
+    </svg>
+    <span class="pct">${pct}%</span>
+    <span>${done}/${total}</span>
+  `;
+}
+
+// ============================================================
+// Day completion celebration
+// ============================================================
+let lastConfetti = 0;
+function checkDayCompletion(day) {
+  let total = 0, done = 0;
+  day.blocks.forEach((b, i) => {
+    if (b.trackable) { total++; if (ST.check(day.date, i)) done++; }
+  });
+  if (total > 0 && done === total) {
+    const now = Date.now();
+    if (now - lastConfetti > 2000) {
+      lastConfetti = now;
+      celebrate(day);
+    }
+  }
+}
+
+function celebrate(day) {
+  const c = $("#confetti-canvas");
+  c.classList.remove("hidden");
+  c.width = window.innerWidth;
+  c.height = window.innerHeight;
+  const ctx = c.getContext("2d");
+  const colors = ["#8B1E1E", "#c97a2c", "#5b8db8", "#5a8c4a", "#7d5ba6", "#3d8a78", "#a44a8c"];
+  const parts = [];
+  for (let i = 0; i < 120; i++) {
+    parts.push({
+      x: Math.random() * c.width,
+      y: -20 - Math.random() * c.height * 0.3,
+      vx: (Math.random() - 0.5) * 5,
+      vy: 2 + Math.random() * 4,
+      r: 4 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      vrot: (Math.random() - 0.5) * 0.4
+    });
+  }
+  let frame = 0;
+  function tick() {
+    frame++;
+    ctx.clearRect(0, 0, c.width, c.height);
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+      p.vy += 0.07;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r, -p.r/2.5, p.r*2, p.r/1.25);
+      ctx.restore();
+    }
+    if (frame < 240) requestAnimationFrame(tick);
+    else c.classList.add("hidden");
+  }
+  tick();
+  showToast(`Day complete · ${day.label}`);
+}
+
+function showToast(text) {
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.style.opacity = "0", 2400);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ============================================================
+// Deadline strip + timeline
+// ============================================================
+function renderDeadlines() {
+  const today = todayISO();
+  const upcoming = schedule.deadlines.filter(d => d.date >= today).slice(0, 4);
+  const row = $("#dl-row");
+  row.innerHTML = "";
+  if (upcoming.length === 0) {
+    row.innerHTML = `<div class="deadline-card"><span class="when">Done</span><span class="what">G10 wrapped</span></div>`;
+  }
+  for (const d of upcoming) {
+    const dist = daysBetween(today, d.date);
+    let cls = "", whenCls = "";
+    if (dist < 3) { cls = "soon"; whenCls = "soon"; }
+    else if (dist < 7) { cls = "near"; whenCls = "near"; }
+    const distStr = dist === 0 ? "TODAY" : dist === 1 ? "tomorrow" : `${dist}d`;
+    const card = document.createElement("div");
+    card.className = `deadline-card ${cls}`;
+    card.innerHTML = `<span class="when ${whenCls}">${distStr}</span> · <span class="mono">${d.date.slice(5)}</span><span class="what">${escapeHtml(d.label)}</span>`;
+    card.addEventListener("click", () => navigateToDate(d.date));
+    row.appendChild(card);
+  }
+
+  // timeline
+  const tl = $("#dl-timeline");
+  tl.innerHTML = "";
+  const startMs = isoToDate(PLAN_START).getTime();
+  const endMs = isoToDate(PLAN_END).getTime();
+  const range = endMs - startMs;
+  // today marker / progress
+  const todayMs = Math.min(Math.max(isoToDate(today).getTime(), startMs), endMs);
+  const todayPct = ((todayMs - startMs) / range) * 100;
+  const prog = document.createElement("div");
+  prog.className = "dl-progress";
+  prog.style.width = todayPct + "%";
+  tl.appendChild(prog);
+  const todayMk = document.createElement("div");
+  todayMk.className = "dl-today";
+  todayMk.style.left = todayPct + "%";
+  tl.appendChild(todayMk);
+  // deadline markers
+  for (const d of schedule.deadlines) {
+    const ms = isoToDate(d.date).getTime();
+    const pct = ((ms - startMs) / range) * 100;
+    if (pct < 0 || pct > 100) continue;
+    const dist = daysBetween(today, d.date);
+    let cls = "";
+    if (dist < 0) cls = "passed";
+    else if (dist < 3) cls = "soon";
+    else if (dist < 7) cls = "near";
+    const m = document.createElement("div");
+    m.className = `dl-marker ${cls}`;
+    m.style.left = pct + "%";
+    m.innerHTML = `<div class="pin"></div><div class="lbl">${d.date.slice(5)} · ${escapeHtml(d.label)}</div>`;
+    m.addEventListener("click", () => navigateToDate(d.date));
+    tl.appendChild(m);
+  }
+}
+
+// ============================================================
+// Week view
+// ============================================================
+function renderWeek() {
+  const grid = $("#week-grid");
+  grid.innerHTML = "";
+
+  // anchor: Monday of the week containing currentISO + offset
+  const anchor = isoToDate(state.currentISO);
+  const dow = anchor.getDay();
+  const offsetToMon = (dow === 0 ? -6 : 1 - dow);
+  anchor.setDate(anchor.getDate() + offsetToMon + (state.weekOffset * 7));
+
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const today = todayISO();
+
+  const weekIsos = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(anchor); d.setDate(anchor.getDate() + i);
+    const iso = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    weekIsos.push(iso);
+    const day = schedule.days.find(x => x.date === iso) ||
+                (iso >= "2026-06-01" && iso <= "2026-06-05" ? schedule.days.find(x => x.date === "2026-06-01") : null);
+    const cell = document.createElement("div");
+    cell.className = "week-cell" + (day ? "" : " empty");
+    if (iso === today) cell.classList.add("today");
+
+    if (!day) {
+      cell.innerHTML = `<div class="wc-head"><span class="wc-day">${dayNames[i]}</span><span class="wc-date">${iso.slice(5)}</span></div>`;
+      grid.appendChild(cell);
+      continue;
+    }
+
+    const deadlines = schedule.deadlines.filter(x => x.date === iso);
+    if (deadlines.length) cell.classList.add("has-deadline");
+
+    let total = 0, done = 0;
+    const taskBits = [];
+    const subjects = new Set();
+    day.blocks.forEach((b, j) => {
+      if (b.trackable) {
+        total++;
+        if (ST.check(day.date, j)) done++;
+        const subs = detectSubjects(b.task);
+        subs.forEach(s => subjects.add(s.key));
+        if (taskBits.length < 3) {
+          // shorten task text
+          const short = b.task.length > 50 ? b.task.slice(0, 47) + "…" : b.task;
+          taskBits.push(short);
+        }
+      }
+    });
+    const pct = total === 0 ? 0 : Math.round(100 * done / total);
+    const subjectPills = [...subjects].slice(0, 4).map(k => {
+      const s = SUBJECTS.find(x => x.key === k);
+      return s ? `<span class="pill s-${s.key}">${s.label}</span>` : "";
+    }).join(" ");
+
+    cell.innerHTML = `
+      <div class="wc-head">
+        <span class="wc-day">${dayNames[i]}</span>
+        <span class="wc-date">${day.label.replace(/^\w+ /, "")}</span>
+      </div>
+      ${deadlines.length ? `<div class="wc-deadline">${deadlines.map(d => escapeHtml(d.label)).join("<br>")}</div>` : ""}
+      <div class="wc-tasks">${subjectPills}</div>
+      <div class="wc-pct">
+        <div class="bar"><span style="width:${pct}%"></span></div>
+        <span>${done}/${total}</span>
+      </div>
+    `;
+    cell.addEventListener("click", () => {
+      state.currentISO = day.date;
+      state.currentNote = "";
+      switchTab("today");
+    });
+    grid.appendChild(cell);
+  }
+
+  const lbl = `${weekIsos[0].slice(5)} – ${weekIsos[6].slice(5)}`;
+  $("#week-label").textContent = lbl;
+}
+
+// ============================================================
+// Stats
+// ============================================================
+function renderStats() {
+  // top-line tiles
+  let totalT = 0, doneT = 0, plannedMin = 0, doneMin = 0;
+  const today = todayISO();
+  let daysWithTasks = 0, daysComplete = 0;
+  for (const day of schedule.days) {
+    let dt = 0, dd = 0;
+    day.blocks.forEach((b, i) => {
+      if (b.trackable) {
+        totalT++;
+        const dur = blockDurationMin(b);
+        plannedMin += dur;
+        dt++;
+        if (ST.check(day.date, i)) {
+          doneT++;
+          doneMin += dur;
+          dd++;
+        }
+      }
+    });
+    if (dt > 0 && day.date <= today) {
+      daysWithTasks++;
+      if (dd === dt) daysComplete++;
+    }
+  }
+  const pct = totalT === 0 ? 0 : Math.round(100 * doneT / totalT);
+
+  // streak: consecutive days from yesterday backwards where all trackable were checked
+  let streak = 0;
+  for (let i = schedule.days.length - 1; i >= 0; i--) {
+    const day = schedule.days[i];
+    if (day.date >= today) continue;
+    let dt = 0, dd = 0;
+    day.blocks.forEach((b, j) => { if (b.trackable) { dt++; if (ST.check(day.date, j)) dd++; } });
+    if (dt === 0) continue;
+    if (dt === dd) streak++;
+    else break;
+  }
+
+  $("#stat-grid").innerHTML = `
+    <div class="stat-tile">
+      <div class="lbl">Plan progress</div>
+      <div class="val">${pct}%</div>
+      <div class="sub">${doneT} of ${totalT} tasks</div>
+    </div>
+    <div class="stat-tile">
+      <div class="lbl">Hours done</div>
+      <div class="val">${(doneMin/60).toFixed(1)}h</div>
+      <div class="sub">of ${(plannedMin/60).toFixed(1)}h planned</div>
+    </div>
+    <div class="stat-tile">
+      <div class="lbl">Streak</div>
+      <div class="val">${streak}</div>
+      <div class="sub">consecutive day${streak===1?"":"s"} all-done</div>
+    </div>
+    <div class="stat-tile">
+      <div class="lbl">Days complete</div>
+      <div class="val">${daysComplete}/${daysWithTasks}</div>
+      <div class="sub">past or today</div>
+    </div>
+  `;
+
+  // subject bars
+  const subjStats = {};
+  for (const s of SUBJECTS) subjStats[s.key] = { planned: 0, done: 0, label: s.label };
+  for (const day of schedule.days) {
+    day.blocks.forEach((b, i) => {
+      if (!b.trackable) return;
+      const dur = blockDurationMin(b);
+      if (dur === 0) return;
+      const subs = detectSubjects(b.task);
+      const checked = ST.check(day.date, i);
+      if (subs.length === 0) return;
+      // distribute duration evenly among subjects of this block
+      const each = dur / subs.length;
+      for (const s of subs) {
+        subjStats[s.key].planned += each;
+        if (checked) subjStats[s.key].done += each;
+      }
+    });
+  }
+  const ordered = Object.entries(subjStats)
+    .filter(([k, v]) => v.planned > 0)
+    .sort((a, b) => b[1].planned - a[1].planned);
+  const maxPlanned = Math.max(...ordered.map(e => e[1].planned), 1);
+  $("#subj-bars").innerHTML = ordered.map(([k, v]) => {
+    const plannedPct = (v.planned / maxPlanned) * 100;
+    const donePct = (v.done / maxPlanned) * 100;
+    return `
+      <div class="subj-bar">
+        <span class="name"><span class="pill s-${k}">${v.label}</span></span>
+        <div class="track">
+          <div class="planned" style="width:${plannedPct}%"></div>
+          <div class="done" style="width:${donePct}%; background:var(--s-${k})"></div>
+        </div>
+        <div class="num">${(v.done/60).toFixed(1)}/${(v.planned/60).toFixed(1)}h</div>
+      </div>
+    `;
+  }).join("");
+
+  // heatmap
+  const hm = $("#heatmap");
+  hm.innerHTML = "";
+  // weeks based on plan layout: each plan "week" runs Sat-Fri (per the .md headers)
+  const weeks = [
+    { lbl: "W1 Apr 25", start: "2026-04-25" },
+    { lbl: "W2 May 2",  start: "2026-05-02" },
+    { lbl: "W3 May 9",  start: "2026-05-09" },
+    { lbl: "W4 May 16", start: "2026-05-16" },
+    { lbl: "W5 May 23", start: "2026-05-23" },
+    { lbl: "W6 May 30", start: "2026-05-30" }
+  ];
+  for (const w of weeks) {
+    const lbl = document.createElement("div");
+    lbl.className = "wc-row-label";
+    lbl.textContent = w.lbl;
+    hm.appendChild(lbl);
+    const start = isoToDate(w.start);
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const iso = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const day = schedule.days.find(x => x.date === iso);
+      const cell = document.createElement("div");
+      cell.className = "wc-cell";
+      if (iso > today) cell.classList.add("future");
+      if (day) {
+        let dt = 0, dd = 0;
+        day.blocks.forEach((b, j) => { if (b.trackable) { dt++; if (ST.check(day.date, j)) dd++; } });
+        if (dt > 0) {
+          const ratio = dd / dt;
+          let lvl = 0;
+          if (ratio > 0.99) lvl = 4;
+          else if (ratio >= 0.66) lvl = 3;
+          else if (ratio >= 0.33) lvl = 2;
+          else if (ratio > 0) lvl = 1;
+          if (lvl > 0) cell.classList.add(`l${lvl}`);
+          cell.innerHTML = `<div class="tt">${day.label} · ${dd}/${dt}</div>`;
+          cell.addEventListener("click", () => navigateToDate(iso));
+          cell.style.cursor = "pointer";
+        }
+      }
+      hm.appendChild(cell);
+    }
+  }
+}
+
+// ============================================================
+// Projects
+// ============================================================
+function renderProjects() {
+  const today = todayISO();
+  // JLEC pipeline status: derive from checked blocks matching needle within date range
+  const pipeline = $("#jlec-pipeline");
+  pipeline.innerHTML = "";
+  for (const step of jlecPipeline) {
+    let total = 0, done = 0;
+    for (const day of schedule.days) {
+      if (day.date < step.match.from || day.date > step.match.to) continue;
+      day.blocks.forEach((b, i) => {
+        if (b.trackable && step.match.needle.test(b.task)) {
+          total++;
+          if (ST.check(day.date, i)) done++;
+        }
+      });
+    }
+    const pct = total === 0 ? 0 : Math.round(100 * done / total);
+    const cls = pct === 100 ? "done" : (today >= step.match.from && today <= step.match.to ? "current" : "");
+    const div = document.createElement("div");
+    div.className = `pl-step ${cls}`;
+    div.innerHTML = `
+      <span class="step-pct">${pct}%</span>
+      <div class="step-name">${escapeHtml(step.name)}</div>
+      <div class="step-meta">${escapeHtml(step.desc)} · ${done}/${total}</div>
+    `;
+    div.addEventListener("click", () => navigateToDate(step.match.from));
+    pipeline.appendChild(div);
+  }
+
+  // exam list
+  const list = $("#exam-list");
+  list.innerHTML = "";
+  for (const ex of examList) {
+    const dist = daysBetween(today, ex.date);
+    let cls = "";
+    if (dist < 0) cls = "passed";
+    else if (dist < 3) cls = "soon";
+    else if (dist < 7) cls = "near";
+    const distStr = dist === 0 ? "TODAY" : dist < 0 ? "done" : `${dist}d`;
+
+    // count prep tasks done before this date
+    let prep = 0, prepDone = 0;
+    for (const day of schedule.days) {
+      if (day.date >= ex.date) continue;
+      day.blocks.forEach((b, i) => {
+        if (!b.trackable) return;
+        const subs = detectSubjects(b.task);
+        if (subs.find(s => s.key === ex.prepSubj)) {
+          prep++;
+          if (ST.check(day.date, i)) prepDone++;
+        }
+      });
+    }
+    const card = document.createElement("div");
+    card.className = `exam-card ${dist < 0 ? "completed" : ""}`;
+    card.innerHTML = `
+      <div>
+        <div class="ec-name">${escapeHtml(ex.name)}</div>
+        <div class="ec-when">${ex.date.slice(5)} · ${escapeHtml(ex.short)}</div>
+        <div class="ec-prep">Prep: ${prepDone}/${prep} task${prep===1?"":"s"} done${prep === 0 ? "" : ` · ${Math.round(100*prepDone/prep)}%`}</div>
+      </div>
+      <div></div>
+      <div class="ec-days ${cls}">${distStr}</div>
+    `;
+    card.addEventListener("click", () => navigateToDate(ex.date));
+    list.appendChild(card);
+  }
+
+  // legend
+  const legend = $("#subj-legend");
+  legend.innerHTML = "";
+  for (const s of SUBJECTS) {
+    const dim = state.filter && state.filter !== s.key ? "dim" : "";
+    const span = document.createElement("span");
+    span.className = `pill s-${s.key} ${dim}`;
+    span.textContent = s.label;
+    span.addEventListener("click", () => {
+      state.filter = state.filter === s.key ? "" : s.key;
+      ST.setFilter(state.filter);
+      renderProjects();
+      renderDay();
+      showToast(state.filter ? `Filter: ${s.label}` : "Filter cleared");
+    });
+    legend.appendChild(span);
+  }
+  if (state.filter) {
+    const clear = document.createElement("span");
+    clear.className = "pill dur";
+    clear.style.cursor = "pointer";
+    clear.textContent = "× clear";
+    clear.addEventListener("click", () => {
+      state.filter = "";
+      ST.setFilter("");
+      renderProjects();
+      renderDay();
+    });
+    legend.appendChild(clear);
+  }
+}
+
+// ============================================================
+// List tab
+// ============================================================
+function renderList() {
+  const tbody = $("#list-body");
+  tbody.innerHTML = "";
+  const today = todayISO();
+  const dlByDate = {};
+  for (const d of schedule.deadlines) {
+    if (!dlByDate[d.date]) dlByDate[d.date] = [];
+    dlByDate[d.date].push(d.label);
+  }
+  schedule.days.forEach((day, i) => {
+    let total = 0, done = 0;
+    day.blocks.forEach((b, j) => { if (b.trackable) { total++; if (ST.check(day.date, j)) done++; } });
+    const pct = total === 0 ? 0 : Math.round(100 * done / total);
+    const tr = document.createElement("tr");
+    if (day.date === today) tr.classList.add("today");
+    if (dlByDate[day.date]) tr.classList.add("has-deadline");
+    if (dayOfWeek(day.date) === 6 && i !== 0) tr.classList.add("weekstart");
+    const eventText = dlByDate[day.date] ? dlByDate[day.date].join(" / ") : "";
+    tr.innerHTML = `
+      <td class="day mono"><a data-iso="${day.date}">${escapeHtml(day.label)}</a></td>
+      <td class="event">${escapeHtml(eventText)}</td>
+      <td>${escapeHtml(day.focus || "")}</td>
+      <td class="pct"><span class="mini-bar"><span style="width:${pct}%"></span></span><span class="muted">${total === 0 ? "—" : pct + "%"}</span></td>
+    `;
+    tr.querySelector("a").addEventListener("click", () => navigateToDate(day.date));
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// Search
+// ============================================================
+function runSearch(q) {
+  q = q.trim().toLowerCase();
+  state.searchQuery = q;
+  const box = $("#search-results");
+  if (!q) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+  const results = [];
+  for (const day of schedule.days) {
+    day.blocks.forEach((b, i) => {
+      if (b.task.toLowerCase().includes(q)) {
+        results.push({ day, idx: i, block: b });
+      }
+    });
+  }
+  if (results.length === 0) {
+    box.classList.remove("hidden");
+    box.innerHTML = `<h3>No matches for "${escapeHtml(q)}"</h3>`;
+    return;
+  }
+  box.classList.remove("hidden");
+  const re = new RegExp(escapeRegex(q), "gi");
+  box.innerHTML = `<h3>${results.length} match${results.length === 1 ? "" : "es"} for "${escapeHtml(q)}"</h3>` +
+    results.slice(0, 30).map(r => {
+      const taskHtml = escapeHtml(r.block.task).replace(re, m => `<mark>${m}</mark>`);
+      return `<div class="search-result" data-iso="${r.day.date}">
+        <div class="sr-day mono">${r.day.label}<br><span style="font-size:11px">${escapeHtml(r.block.time)}</span></div>
+        <div class="sr-task">${taskHtml}</div>
+      </div>`;
+    }).join("") +
+    (results.length > 30 ? `<div class="muted" style="text-align:center;margin-top:8px;font-size:11px">${results.length - 30} more results hidden — refine query</div>` : "");
+  box.querySelectorAll(".search-result").forEach(el => {
+    el.addEventListener("click", () => {
+      navigateToDate(el.dataset.iso);
+      $("#search").value = "";
+      runSearch("");
+    });
+  });
+}
+function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+// ============================================================
+// Tabs
+// ============================================================
+function switchTab(tab) {
+  state.tab = tab;
+  $$("#tab-today, #tab-week, #tab-stats, #tab-projects, #tab-list").forEach(el => el.classList.add("hidden"));
+  const target = $(`#tab-${tab}`);
+  if (target) target.classList.remove("hidden");
+  $$("nav.tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  // re-render targeted tab
+  if (tab === "today") renderDay();
+  else if (tab === "week") { state.weekOffset = 0; renderWeek(); }
+  else if (tab === "stats") renderStats();
+  else if (tab === "projects") renderProjects();
+  else if (tab === "list") renderList();
+}
+
+// ============================================================
+// Navigation helpers
+// ============================================================
+function go(delta) {
+  const idx = dayIndex(state.currentISO);
+  const next = idx + delta;
+  if (next < 0 || next >= schedule.days.length) return;
+  state.currentISO = schedule.days[next].date;
+  state.currentNote = "";
+  renderDay();
+}
+function jumpToday() {
+  const c = clampToPlan(todayISO());
+  state.currentISO = c.iso;
+  state.currentNote = c.note;
+  renderDay();
+}
+function navigateToDate(iso) {
+  const c = clampToPlan(iso);
+  state.currentISO = c.iso;
+  state.currentNote = c.note;
+  switchTab("today");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ============================================================
+// Export / import
+// ============================================================
+function doExport() {
+  const data = ST.exportAll();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `g10-state-${todayISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  showToast("State exported");
+}
+function doImport() {
+  $("#import-file").click();
+}
+
+// ============================================================
+// Init
+// ============================================================
+function init() {
+  const c = clampToPlan(todayISO());
+  state.currentISO = c.iso;
+  state.currentNote = c.note;
+
+  renderDeadlines();
+  renderDay();
+
+  // tabs
+  $$("nav.tabs button").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+  // day nav
+  $("#nav-prev").addEventListener("click", () => go(-1));
+  $("#nav-next").addEventListener("click", () => go(1));
+  $("#nav-today").addEventListener("click", jumpToday);
+
+  // day actions
+  $("#day-mark-all").addEventListener("click", () => {
+    const day = schedule.days[dayIndex(state.currentISO)];
+    day.blocks.forEach((b, i) => { if (b.trackable) ST.setCheck(day.date, i, true); });
+    renderDay();
+    checkDayCompletion(day);
+  });
+  $("#day-clear").addEventListener("click", () => {
+    if (!confirm("Clear all checks for this day?")) return;
+    const day = schedule.days[dayIndex(state.currentISO)];
+    day.blocks.forEach((b, i) => { if (b.trackable) ST.setCheck(day.date, i, false); });
+    renderDay();
+  });
+
+  // notes autosave
+  $("#day-notes").addEventListener("input", e => {
+    ST.setNote(state.currentISO, e.target.value);
+  });
+
+  // week nav
+  $("#week-prev").addEventListener("click", () => { state.weekOffset--; renderWeek(); });
+  $("#week-next").addEventListener("click", () => { state.weekOffset++; renderWeek(); });
+  $("#week-now").addEventListener("click", () => { state.weekOffset = 0; jumpToday(); renderWeek(); });
+
+  // search
+  $("#search").addEventListener("input", e => runSearch(e.target.value));
+
+  // export/import
+  $("#btn-export").addEventListener("click", doExport);
+  $("#btn-import").addEventListener("click", doImport);
+  $("#import-file").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const obj = JSON.parse(reader.result);
+        if (!confirm("Import will replace all current checkbox/note state. Continue?")) return;
+        ST.importAll(obj);
+        renderDay();
+        renderDeadlines();
+        if (state.tab !== "today") switchTab(state.tab);
+        showToast("State imported");
+      } catch (err) {
+        alert("Import failed: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  // help overlay
+  $("#icon-help").addEventListener("click", () => $("#help-overlay").classList.remove("hidden"));
+  $("#help-close").addEventListener("click", () => $("#help-overlay").classList.add("hidden"));
+  $("#help-overlay").addEventListener("click", e => { if (e.target.id === "help-overlay") $("#help-overlay").classList.add("hidden"); });
+
+  // keyboard
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input, textarea")) {
+      if (e.key === "Escape") { e.target.blur(); if (e.target.id === "search") { e.target.value = ""; runSearch(""); } }
+      return;
+    }
+    if (e.key === "Escape") {
+      $("#help-overlay").classList.add("hidden");
+      $("#search").value = ""; runSearch("");
+      return;
+    }
+    if (e.key === "ArrowLeft" && state.tab === "today") go(-1);
+    else if (e.key === "ArrowRight" && state.tab === "today") go(1);
+    else if (e.key.toLowerCase() === "t") jumpToday();
+    else if (e.key === "?") $("#help-overlay").classList.remove("hidden");
+    else if (e.key === "/") { e.preventDefault(); $("#search").focus(); }
+    else if (e.key === "1") switchTab("today");
+    else if (e.key === "2") switchTab("week");
+    else if (e.key === "3") switchTab("stats");
+    else if (e.key === "4") switchTab("projects");
+    else if (e.key === "5") switchTab("list");
+  });
+
+  // periodic refresh of "now" indicator
+  setInterval(() => {
+    if (state.tab === "today") renderNowCard();
+  }, 30000);
+
+  // also re-render now card if mid-day rolls forward
+  setInterval(() => {
+    const nowDate = todayISO();
+    if (state.tab === "today" && state.currentISO === nowDate) {
+      const day = schedule.days[dayIndex(nowDate)];
+      if (!day) return;
+      // refresh row highlighting (cheaper than full renderDay every minute)
+      const cur = findCurrentBlock(day);
+      $$("tr.now-block").forEach(tr => tr.classList.remove("now-block"));
+      if (cur) {
+        const tr = $(`#day-body`).children[cur.idx];
+        if (tr) tr.classList.add("now-block");
+      }
+    }
+  }, 60000);
+}
+init();
+</script>
+</body>
+</html>
